@@ -1,0 +1,68 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: chase
+ * Date: 18/04/17
+ * Time: 14:10
+ */
+
+namespace App\Models;
+
+use App\Definitions\Columns;
+use Illuminate\Validation\Rule;
+
+/**
+ * Class ColumnModel
+ * @package Models
+ * @property string name
+ * @property string type
+ * @property string dataType
+ * @property array extra
+ * @property string index
+ * @property string generatedAs
+ */
+class ColumnModel extends NonPersistentModel
+{
+
+    const COLUMN_NAME = 'name';
+    const COLUMN_DATA_TYPE = 'dataType';
+    const COLUMN_DATA_TYPE_LENGTH = 'length';
+    const COLUMN_EXTRA_PARAMETERS = 'extra';
+    const COLUMN_TYPE = 'type';
+    const COLUMN_INDEX = 'index';
+    const IS_GENERATED_AS = 'generatedAs';
+
+
+    protected $defaultAttributeValues = [
+        self::COLUMN_INDEX => Columns::COLUMN_SIMPLE_INDEX,
+        self::COLUMN_EXTRA_PARAMETERS => [],
+    ];
+
+    /**
+     * Call initBefore to create the validation rules
+     * @param array $attributes
+     */
+    protected function initBefore(array $attributes)
+    {
+        $this->rules= [
+            self::COLUMN_NAME => [
+                'required',
+                'string',
+            ],
+            self::COLUMN_DATA_TYPE => [
+                'required',
+                Rule::in(Columns::AVAILABLE_COLUMN_DATA_TYPES)
+            ],
+            self::COLUMN_INDEX => [
+                'present',
+                Rule::in(Columns::AVAILABLE_COLUMN_INDEXES)
+            ],
+            self::COLUMN_TYPE => [
+                'required',
+                Rule::in(Columns::AVAILABLE_COLUMN_TYPES)
+            ],
+        ];
+    }
+
+
+}

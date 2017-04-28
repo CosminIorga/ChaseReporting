@@ -1,0 +1,3 @@
+The following classes are considered helpers
+No functionality should be implemented inside
+Most variables should be constants used in various parts of the project
