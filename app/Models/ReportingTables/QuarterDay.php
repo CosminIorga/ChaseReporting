@@ -3,6 +3,8 @@
 namespace App\Models\ReportingTables;
 
 
+use Carbon\Carbon;
+
 class QuarterDay extends ReportingTable
 {
 
@@ -12,10 +14,9 @@ class QuarterDay extends ReportingTable
      */
     public function getTableName(): string
     {
-        $referenceDate = $this->referenceDate->format('Y_m_d');
         $className = (new \ReflectionClass($this))->getShortName();
 
-        $tableName = $className . "_" . floor($this->referenceDate->format('H') / 6) . "_" . $referenceDate;
+        $tableName = $className . "_" . $this->getBaseDate()->format('Y_m_d_H_i');
 
         return $tableName;
     }
@@ -37,6 +38,25 @@ class QuarterDay extends ReportingTable
      */
     public function getValueForCoordinate(int $coordinate): string
     {
-        return $coordinate * $this->dataInterval;
+        $baseDate = $this->getBaseDate();
+
+        $baseDate->addMinutes($this->dataInterval * $coordinate);
+
+        return $baseDate->format('H_i');
+    }
+
+    /**
+     * Function used to retrieve the first datetime at which the table should hold information
+     * @return Carbon
+     */
+    public function getBaseDate(): Carbon
+    {
+        $referenceDate = clone $this->referenceDate;
+
+        $fullHalves = intval($this->referenceDate->format('H') / 6);
+
+        $referenceDate->setTime($fullHalves * 6, 0, 0);
+
+        return $referenceDate;
     }
 }

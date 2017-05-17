@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
+use App\Repositories\DataRepository;
+use App\Repositories\ReportingRepository as CommonRepository;
 use Illuminate\Support\ServiceProvider;
-use App\Repositories\Reporting as CommonRepository;
 
 class RepositoryProvider extends ServiceProvider
 {
@@ -26,6 +27,10 @@ class RepositoryProvider extends ServiceProvider
     {
         $this->app->singleton(CommonRepository::class, function () {
             return new CommonRepository();
+        });
+
+        $this->app->singleton(DataRepository::class, function () {
+            return new DataRepository();
         });
     }
 }

@@ -2,37 +2,42 @@
 
 namespace App\Jobs;
 
-use App\Definitions\Columns;
+use App\Definitions\Data;
 use App\Definitions\Table;
 use App\Exceptions\CreateTableException;
 use App\Factories\ReportingTableFactory;
 use App\Models\ColumnModel;
 use App\Models\ReportingTables\ReportingTable;
 use App\Models\ResponseModel;
-use App\Repositories\Reporting;
+use App\Repositories\ReportingRepository;
+use App\Services\ConfigGetter;
 use App\Traits\CustomConsoleOutput;
-use App\Transformers\TransformConfigPivotColumns;
-use DateTime;
-use App\Definitions\Common;
+use App\Transformers\TransformConfigColumn;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class CreateReportingTable extends DefaultJob
 {
-
     use CustomConsoleOutput;
 
     const CONNECTION = "sync";
     const QUEUE_NAME = "createReportingTable";
 
     /**
-     * Common Repository
-     * @var Reporting
+     * Global getter used to get config values and validate them in advance
+     * @var ConfigGetter
      */
-    protected $commonRepository;
+    protected $configGetter;
+
+    /**
+     * Common Repository
+     * @var ReportingRepository
+     */
+    protected $reportingRepository;
 
     /**
      * Variable used to know which reporting table it should create
-     * @var DateTime
+     * @var Carbon
      */
     protected $referenceDate;
 
@@ -49,6 +54,12 @@ class CreateReportingTable extends DefaultJob
     protected $dataInterval;
 
     /**
+     * Class used to handle the specific table interval data
+     * @var ReportingTable
+     */
+    protected $reportingTableModel;
+
+    /**
      * The table name
      * @var string
      */
@@ -61,112 +72,86 @@ class CreateReportingTable extends DefaultJob
     protected $tableStructure;
 
     /**
-     * @var ReportingTable
-     */
-    protected $reportingTableModel;
-
-
-    /**
      * CreateReportingTable constructor.
-     * @param DateTime $referenceDate
+     * @param Carbon $referenceDate
      */
-    public function __construct(DateTime $referenceDate)
+    public function __construct(Carbon $referenceDate)
     {
         $this->init($referenceDate);
     }
 
     /**
      * Function used to initialize various fields
-     * @param DateTime $referenceDate
+     * @param Carbon $referenceDate
      */
-    protected function init(DateTime $referenceDate)
+    protected function init(Carbon $referenceDate)
     {
+        /* Initialize config getter */
+        $this->configGetter = ConfigGetter::Instance();
+        /* Save reference date */
         $this->referenceDate = $referenceDate;
-        $this->tableInterval = config('common.table_interval');
-        $this->dataInterval = config('common.data_interval');
 
-        $this->validateInput();
+        /* Retrieve tableInterval and dateInterval */
+        $this->tableInterval = $this->configGetter->tableInterval;
+        $this->dataInterval = $this->configGetter->dataInterval;
     }
 
-    /**
-     * Function used to validate received and config data
-     * @throws CreateTableException
-     */
-    protected function validateInput()
-    {
-        /* Check if table interval is valid */
-        if (!in_array($this->tableInterval, Common::AVAILABLE_TABLE_INTERVALS)) {
-            throw new CreateTableException(
-                sprintf(
-                    CreateTableException::INVALID_TABLE_INTERVAL,
-                    $this->tableInterval
-                )
-            );
-        }
 
-        /* Check if data interval is valid */
-        if (!in_array($this->dataInterval, Common::AVAILABLE_DATA_INTERVALS)) {
-            throw new CreateTableException(
-                sprintf(
-                    CreateTableException::INVALID_DATA_INTERVAL,
-                    $this->dataInterval
-                )
-            );
-        }
-
-        /* Check if received reference date is of Datetime type */
-        if (!$this->referenceDate instanceof DateTime) {
-            throw new CreateTableException(
-                CreateTableException::INVALID_REFERENCE_DATE
-            );
-        }
-    }
-
-    /**
-     * Job runner
-     * @param Reporting $commonRepository
-     * @return ResponseModel
-     */
     public function handle(
-        Reporting $commonRepository
+        ReportingRepository $reportingRepository
     ): ResponseModel {
         /* Save repository variable as class-wide variable */
-        $this->commonRepository = $commonRepository;
+        $this->reportingRepository = $reportingRepository;
 
-        /* Get class that contains specific information regarding tableInterval */
-        $this->reportingTableModel = $this->getReportingTableJob();
-
-        /* Check if table can be created with given information */
-        if (method_exists($this->reportingTableModel, 'checkIfTableCanBeCreated')) {
-            $this->reportingTableModel->checkIfTableCanBeCreated();
-        }
+        /* Get class that handles the config table interval */
+        $this->getReportingTableModel();
 
         /* Get table name */
-        $this->tableName = $this->reportingTableModel->getTableName();
+        $this->getTableName();
 
-        $this->info("Decided following table name: {$this->tableName}");
-
-        /* Check if table already exists */
+        /* Check if table exists */
         $this->checkIfTableExists();
 
         /* Compute table structure */
-        $this->tableStructure = $this->computeTableStructure();
+        $this->computeTableStructure();
 
         /* Create table */
         $this->createTable();
 
+        /* Set return response */
         $this->setResponse(true, Table::MESSAGE_TABLE_CREATED_SUCCESSFULLY);
 
         return $this->getResponse();
     }
 
     /**
-     * Function used to check if table exists
-     * @throws CreateTableException
+     * Function used to retrieve the class which handles the given table interval
+     */
+    protected function getReportingTableModel()
+    {
+        /* Get the reportingTableModel */
+        $reportingTableModel = ReportingTableFactory::build($this->tableInterval);
+
+        /* Init the model*/
+        $reportingTableModel->init($this->referenceDate, $this->dataInterval);
+
+        $this->reportingTableModel = $reportingTableModel;
+    }
+
+    /**
+     * Function used to retrieve the table name using the handler class
+     */
+    protected function getTableName()
+    {
+        $this->tableName = $this->reportingTableModel->getTableName();
+    }
+
+    /**
+     * Check if table exists. Throw exception if so
      */
     protected function checkIfTableExists()
     {
-        $exists = $this->commonRepository->tableExists($this->tableName);
+        $exists = $this->reportingRepository->tableExists($this->tableName);
 
         if ($exists) {
             throw new CreateTableException(
@@ -179,18 +164,16 @@ class CreateReportingTable extends DefaultJob
     }
 
     /**
-     * Function used to compute table structure
-     * @return Collection
+     * Function used to compute table columns
      */
-    protected function computeTableStructure(): Collection
+    protected function computeTableStructure()
     {
-        $tableStructure = collect([]);
-
         $primaryColumn = $this->computePrimaryColumn();
         $pivotColumns = $this->computePivotColumns();
+
         $intervalColumns = $this->computeIntervalColumns();
 
-        return $tableStructure
+        $this->tableStructure = collect([])
             ->merge($primaryColumn)
             ->merge($pivotColumns)
             ->merge($intervalColumns);
@@ -202,16 +185,14 @@ class CreateReportingTable extends DefaultJob
      */
     protected function computePrimaryColumn(): Collection
     {
-        $primaryColumn = collect([]);
+        $data = $this->configGetter->primaryColumnData;
 
-        $primaryColumn->push(new ColumnModel([
-            ColumnModel::COLUMN_NAME => Columns::PRIMARY_COLUMN_NAME,
-            ColumnModel::COLUMN_TYPE => Columns::COLUMN_IS_PRIMARY,
-            ColumnModel::COLUMN_DATA_TYPE => Columns::PRIMARY_COLUMN_DATA_TYPE,
-            ColumnModel::COLUMN_INDEX => Columns::PRIMARY_COLUMN_INDEX
-        ]));
+        $transformedData = (new TransformConfigColumn())->toColumnModelData($data);
+        $column = new ColumnModel($transformedData);
 
-        return $primaryColumn;
+        return collect([
+            $column
+        ]);
     }
 
     /**
@@ -220,74 +201,50 @@ class CreateReportingTable extends DefaultJob
      */
     protected function computePivotColumns(): Collection
     {
-        $pivotColumns = collect([]);
-
-        $configPivotColumns = config('columns.pivots');
-
-        array_walk($configPivotColumns, function (array $configPivotColumns) use ($pivotColumns) {
-            $columnModelData = (new TransformConfigPivotColumns())->transform($configPivotColumns);
-
-            $columnModelData = array_merge($columnModelData, [
-                ColumnModel::COLUMN_TYPE => Columns::COLUMN_IS_PIVOT
-            ]);
-
-            $columnModel = new ColumnModel($columnModelData);
-
-            $pivotColumns->push($columnModel);
-        });
-
-        return $pivotColumns;
-    }
-
-    /**
-     * Function used to compute table structure
-     * @return Collection
-     */
-    protected function computeIntervalColumns(): Collection
-    {
-
-        /* Compute the number of columns based on data interval and table interval */
-        $columnCount = $this->reportingTableModel->getIntervalColumnCount();
+        $data = $this->configGetter->pivotColumnsData;
 
         $columns = collect([]);
 
-        foreach (range(1, $columnCount) as $columnIndex) {
-            $columnModel = new ColumnModel([
-                ColumnModel::COLUMN_NAME => $this->computeIntervalColumnName($columnIndex),
-                ColumnModel::COLUMN_TYPE => Columns::COLUMN_IS_INTERVAL,
-                ColumnModel::COLUMN_DATA_TYPE => Columns::INTERVAL_COLUMN_DATA_TYPE,
-                ColumnModel::COLUMN_INDEX => Columns::INTERVAL_COLUMN_INDEX,
-            ]);
+        array_walk($data, function ($record) use ($columns) {
+            $transformedData = (new TransformConfigColumn())->toColumnModelData($record);
+            $column = new ColumnModel($transformedData);
 
-            $columns->push($columnModel);
-        }
+            $columns->push($column);
+        });
 
         return $columns;
     }
 
     /**
-     * Function used to get the generated column name based on given coordinates
-     * @param int $index
-     * @return string
+     * Function used to compute the interval columns
+     * @return Collection
      */
-    protected function computeIntervalColumnName(int $index): string
+    protected function computeIntervalColumns(): Collection
     {
-        $firstIntervalValue = $this->reportingTableModel->getValueForCoordinate($index - 1);
-        $secondIntervalValue = $this->reportingTableModel->getValueForCoordinate($index);
+        $columnCount = $this->reportingTableModel->getIntervalColumnCount();
+        $range = range(1, $columnCount);
+        $data = collect([]);
+        $configData = $this->configGetter->intervalColumnData;
 
-        return sprintf(
-            Columns::INTERVAL_COLUMN_NAME_TEMPLATE,
-            $firstIntervalValue,
-            $secondIntervalValue
-        );
+        array_walk($range, function ($columnIndex) use ($data, $configData) {
+            $configData[Data::CONFIG_COLUMN_NAME] = $this->reportingTableModel->getIntervalColumnByIndex($columnIndex);
+
+            $transformedData = (new TransformConfigColumn())->toColumnModelData($configData);
+            $column = new ColumnModel($transformedData);
+
+            $data->push($column);
+        });
+
+        return $data;
     }
 
     /**
-     * Function used to create reporting table
+     * Function used to create table
+     * @throws CreateTableException
      */
     protected function createTable()
     {
-        list($success, $message) = $this->commonRepository->createTable($this->tableName, $this->tableStructure);
+        list($success, $message) = $this->reportingRepository->createTable($this->tableName, $this->tableStructure);
 
         if (!$success) {
             throw new CreateTableException(sprintf(
@@ -297,19 +254,4 @@ class CreateReportingTable extends DefaultJob
             ));
         }
     }
-
-    /**
-     * Function used to compute job that handles the table creation
-     * @return ReportingTable
-     */
-    protected function getReportingTableJob(): ReportingTable
-    {
-        /** @var ReportingTable $reportingTableModel */
-        $reportingTableModel = ReportingTableFactory::build($this->tableInterval);
-
-        $reportingTableModel->init($this->referenceDate, $this->dataInterval);
-
-        return $reportingTableModel;
-    }
-
 }

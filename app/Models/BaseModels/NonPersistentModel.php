@@ -6,7 +6,7 @@
  * Time: 17:17
  */
 
-namespace App\Models;
+namespace App\Models\BaseModels;
 
 
 use App\Traits\ModelValidator;

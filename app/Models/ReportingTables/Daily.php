@@ -9,6 +9,8 @@
 namespace App\Models\ReportingTables;
 
 
+use Carbon\Carbon;
+
 class Daily extends ReportingTable
 {
 
@@ -44,6 +46,20 @@ class Daily extends ReportingTable
      */
     public function getValueForCoordinate(int $coordinate): string
     {
-        return $coordinate;
+        $baseDate = $this->getBaseDate();
+
+        $baseDate->addMinutes($this->dataInterval * $coordinate);
+
+        return $baseDate->format('H');
     }
+
+    /**
+     * Function used to retrieve the first datetime at which the table should hold information
+     * @return Carbon
+     */
+    public function getBaseDate(): Carbon
+    {
+        return new Carbon($this->referenceDate->format('Y-m-d'));
+    }
+
 }

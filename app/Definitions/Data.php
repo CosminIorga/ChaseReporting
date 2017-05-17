@@ -11,17 +11,20 @@ namespace App\Definitions;
 
 class Data
 {
+    /**
+     * Value returned if to-be-inserted record does not contain the corresponding key for an aggregator
+     */
+    const EMPTY_VALUE = '';
 
     /**
-     * Pivot column definitions
+     * Config column definitions (Primary Column, Pivot Columns, Interval Columns and Timestamp Column)
      */
-    const PIVOT_NAME = 'name';
-    const PIVOT_DATA_TYPE = 'dataType';
-    const PIVOT_EXTRA = 'extra';
-
-    const PIVOT_EXTRA_INDEX = 'index';
-    const PIVOT_EXTRA_DATA_TYPE_LENGTH = 'dataTypeLength';
-
+    const CONFIG_COLUMN_NAME = 'name';
+    const CONFIG_COLUMN_DATA_TYPE = 'dataType';
+    const CONFIG_COLUMN_DATA_TYPE_LENGTH = 'dataTypeLength';
+    const CONFIG_COLUMN_INDEX = 'index';
+    const CONFIG_COLUMN_ALLOW_NULL = 'allowNull';
+    const CONFIG_COLUMN_TYPE = 'type';
 
     /**
      * Aggregated column definitions
@@ -32,5 +35,6 @@ class Data
     const AGGREGATE_EXTRA = 'extra';
 
     const AGGREGATE_EXTRA_ROUND = 'round';
+    const AGGREGATE_EXTRA_COUNTER = 'counter';
 
 }

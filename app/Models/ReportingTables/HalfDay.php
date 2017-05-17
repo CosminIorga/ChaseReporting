@@ -1,17 +1,12 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: chase
- * Date: 24/04/17
- * Time: 16:32
- */
 
 namespace App\Models\ReportingTables;
 
 
+use Carbon\Carbon;
+
 class HalfDay extends ReportingTable
 {
-
 
     /**
      * Function used to compute table name based on given table interval and reference date
@@ -19,10 +14,9 @@ class HalfDay extends ReportingTable
      */
     public function getTableName(): string
     {
-        $referenceDate = $this->referenceDate->format('Y_m_d');
         $className = (new \ReflectionClass($this))->getShortName();
 
-        $tableName = $className . "_" . $referenceDate . "_" . $this->referenceDate->format('H') / 12;
+        $tableName = $className . "_" . $this->getBaseDate()->format('Y_m_d_H_i');
 
         return $tableName;
     }
@@ -44,6 +38,25 @@ class HalfDay extends ReportingTable
      */
     public function getValueForCoordinate(int $coordinate): string
     {
-        return $coordinate * $this->dataInterval;
+        $baseDate = $this->getBaseDate();
+
+        $baseDate->addMinutes($this->dataInterval * $coordinate);
+
+        return $baseDate->format('H_i');
+    }
+
+    /**
+     * Function used to retrieve the first datetime at which the table should hold information
+     * @return Carbon
+     */
+    public function getBaseDate(): Carbon
+    {
+        $referenceDate = clone $this->referenceDate;
+
+        $fullHalves = intval($this->referenceDate->format('H') / 12);
+
+        $referenceDate->setTime($fullHalves * 12, 0, 0);
+
+        return $referenceDate;
     }
 }

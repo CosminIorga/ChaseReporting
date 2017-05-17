@@ -2,8 +2,12 @@
 
 namespace App\Models;
 
+
 use Illuminate\Database\Eloquent\Model;
 
-class InsertDataModel extends Model
+class DataModel extends Model
 {
+
+    protected $guarded = [];
+
 }

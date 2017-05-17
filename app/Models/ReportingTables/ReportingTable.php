@@ -2,14 +2,17 @@
 
 namespace App\Models\ReportingTables;
 
-use DateTime;
+
+use App\Definitions\Data;
+use App\Services\ConfigGetter;
+use Carbon\Carbon;
 
 abstract class ReportingTable
 {
 
     /**
      * The reference date
-     * @var DateTime
+     * @var Carbon
      */
     protected $referenceDate;
 
@@ -19,16 +22,60 @@ abstract class ReportingTable
      */
     protected $dataInterval;
 
+    /**
+     * The config getter
+     * @var ConfigGetter
+     */
+    protected $configGetter;
+
 
     /**
      * Function used to initialize various fields
-     * @param DateTime $referenceDate
+     * @param Carbon $referenceDate
      * @param string $dataInterval
      */
-    public function init(DateTime $referenceDate, string $dataInterval)
+    public function init(Carbon $referenceDate, string $dataInterval)
     {
         $this->referenceDate = $referenceDate;
         $this->dataInterval = $dataInterval;
+
+        $this->configGetter = ConfigGetter::Instance();
+    }
+
+    /**
+     * Function used to compute interval column name based on given index
+     * @param int $index
+     * @return string
+     */
+    public function getIntervalColumnByIndex(int $index): string
+    {
+        $intervalColumnData = $this->configGetter->intervalColumnData;
+
+        $intervalColumnNameTemplate = $intervalColumnData[Data::CONFIG_COLUMN_NAME];
+
+        return sprintf(
+            $intervalColumnNameTemplate,
+            $this->getValueForCoordinate($index - 1),
+            $this->getValueForCoordinate($index)
+        );
+    }
+
+    /**
+     * Function used to retrieve the interval column given a reference date
+     * @param Carbon $referenceDate
+     * @return string
+     */
+    public function getIntervalColumnByReferenceData(Carbon $referenceDate = null): string
+    {
+        if (is_null($referenceDate)) {
+            $referenceDate = $this->referenceDate;
+        }
+
+        $difference = $referenceDate->getTimestamp() - $this->getBaseDate()->getTimestamp();
+
+        $index = intval( ( $difference / ( $this->dataInterval * 60 ) ) + 1 );
+
+        return $this->getIntervalColumnByIndex($index);
     }
 
     /**
@@ -49,4 +96,11 @@ abstract class ReportingTable
      * @return string
      */
     abstract public function getValueForCoordinate(int $coordinate): string;
+
+    /**
+     * Function used to retrieve the first datetime at which the table should hold information
+     * @return Carbon
+     */
+    abstract public function getBaseDate(): Carbon;
+
 }

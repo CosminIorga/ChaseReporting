@@ -9,40 +9,68 @@
 return [
 
     /**
-     * The timestamp key used to compute the table it needs to insert the data in
+     * The timestamp key used to compute the table and record it needs to insert / update data
      */
     'timestamp_key' => [
         'name' => 'start_date',
+        'dataType' => 'datetime',
+        'allowNull' => false
+    ],
+
+
+    /**
+     * The primary key configuration
+     * Each "column" should be represented as an array containing:
+     *    name => A string representing the column name
+     *    dataType => The column type. See available column types in App\Definitions\Column
+     *    dataTypeLength => The length for data type such as varchar(20) or int(11). Default: null
+     *    index => See available indexes in App\Definitions\Columns. Default: "index"
+     */
+    'primary_key' => [
+        'name' => 'hash_id',
+        'dataType' => 'string',
+        'dataTypeLength' => 255,
+        'index' => 'primary',
     ],
 
 
     /**
      * The data that will create the pivot columns (Those used in group by clause)
-     * Each "column" should be represented as an array containing:
-     *      name => A string representing the column name
-     *      dataType => The column type. See available column types in App\Definitions\Columns
-     *      extra => An array containing various information such as:
-     *          index => See available indexes in App\Definitions\Columns. Default: "index"
-     *          dataTypeLength => The length for data type such as varchar(20) or int(11). Default: null
      * All pivot columns will be used in a unique index as to better enforce the reporting algorithm
      */
     'pivots' => [
         [
-            'name' => 'pivot1',
-            'dataType' => 'integer',
+            'name' => 'client',
+            'dataType' => 'string',
+            'dataTypeLength' => 255,
             'index' => 'index',
-            'extra' => [
-                'dataTypeLength' => null,
-            ]
+            'allowNull' => false,
         ],
         [
-            'name' => 'pivot2',
+            'name' => 'carrier',
             'dataType' => 'string',
+            'dataTypeLength' => 255,
             'index' => 'index',
-            'extra' => [
-                'dataTypeLength' => 20,
-            ]
+            'allowNull' => false,
         ],
+        [
+            'name' => 'destination',
+            'dataType' => 'string',
+            'dataTypeLength' => 255,
+            'index' => 'index',
+            'allowNull' => false,
+        ],
+    ],
+
+
+    /**
+     * The interval column configuration
+     */
+    'intervals' => [
+        'name' => 'interval_%1$s_%2$s',
+        'dataType' => 'json',
+        'index' => null,
+        'allowNull' => true
     ],
 
 
@@ -70,20 +98,22 @@ return [
             'jsonName' => 'total_cost',
             'function' => 'sum',
             'extra' => [
-                'round' => 4
+                'round' => 2
             ]
         ],
         [
-            'name' => 'records',
+            'name' => null,
             'jsonName' => 'total_records',
             'function' => 'count',
             'extra' => []
         ],
         [
-            'name' => 'records',
+            'name' => 'status',
             'jsonName' => 'distinct_records',
             'function' => 'distinct',
-            'extra' => []
+            'extra' => [
+                'counter' => true
+            ]
         ],
     ]
 

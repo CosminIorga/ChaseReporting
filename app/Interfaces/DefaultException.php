@@ -16,4 +16,5 @@ namespace App\Interfaces;
 interface DefaultException
 {
     public function report();
+
 }

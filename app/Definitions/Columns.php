@@ -12,20 +12,20 @@ namespace App\Definitions;
 class Columns
 {
 
-
     /**
      * Available column types
      */
-    const COLUMN_IS_PRIMARY = 'is_primary';
-    const COLUMN_IS_PIVOT = 'is_pivot';
-    const COLUMN_IS_INTERVAL = 'is_interval';
+    const COLUMN_PRIMARY = 'primary';
+    const COLUMN_PIVOT = 'pivot';
+    const COLUMN_TIMESTAMP = 'timestamp';
+    const COLUMN_INTERVAL = 'interval';
 
     const AVAILABLE_COLUMN_TYPES = [
-        self::COLUMN_IS_PRIMARY,
-        self::COLUMN_IS_PIVOT,
-        self::COLUMN_IS_INTERVAL,
+        self::COLUMN_PRIMARY,
+        self::COLUMN_PIVOT,
+        self::COLUMN_TIMESTAMP,
+        self::COLUMN_INTERVAL,
     ];
-
 
     /**
      * Available column data types
@@ -55,19 +55,4 @@ class Columns
         Columns::COLUMN_PRIMARY_INDEX,
         Columns::COLUMN_NO_INDEX,
     ];
-
-
-    /**
-     * Primary column definitions
-     */
-    const PRIMARY_COLUMN_NAME = 'id';
-    const PRIMARY_COLUMN_DATA_TYPE = self::COLUMN_DATA_TYPE_INT;
-    const PRIMARY_COLUMN_INDEX = self::COLUMN_PRIMARY_INDEX;
-
-    /**
-     * Interval-Generated column definitions
-     */
-    const INTERVAL_COLUMN_NAME_TEMPLATE = 'interval_%1$s_%2$s';
-    const INTERVAL_COLUMN_DATA_TYPE = self::COLUMN_DATA_TYPE_JSON;
-    const INTERVAL_COLUMN_INDEX = self::COLUMN_NO_INDEX;
 }

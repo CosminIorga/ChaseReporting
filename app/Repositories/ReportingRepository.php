@@ -10,11 +10,11 @@ namespace App\Repositories;
 
 
 use App\Definitions\Columns;
+use App\Models\ColumnModel;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
-use App\Models\ColumnModel;
 
-class Reporting
+class ReportingRepository
 {
     /**
      * Function used to check if tableName exists
@@ -39,11 +39,16 @@ class Reporting
                 $columnDefinitions->each(function (ColumnModel $columnModel) use (&$table) {
 
                     /* Create the column */
-                    $table->addColumn(
+                    $column = $table->addColumn(
                         $columnModel->dataType,
                         $columnModel->name,
-                        $columnModel->extra
+                        $columnModel->extra ?? []
                     );
+
+                    if ($columnModel->allow_null) {
+                        /* @noinspection PhpUndefinedMethodInspection */
+                        $column->nullable();
+                    }
 
                     /* Add index to column */
                     switch ($columnModel->index) {
@@ -60,6 +65,8 @@ class Reporting
                             /* Add no index */
                             break;
                     }
+
+
                 });
 
                 $table->engine = 'InnoDB';
@@ -79,19 +86,4 @@ class Reporting
         ];
     }
 
-    /**
-     * Function used to create or update a reporting table record
-     * @param string $tableName
-     * @param Collection $data
-     * @param bool $onDuplicateUpdate
-     * @return bool
-     */
-    public function insertRecord(string $tableName, Collection $data, $onDuplicateUpdate = true): bool
-    {
-
-
-
-
-        return false;
-    }
 }
