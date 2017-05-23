@@ -82,7 +82,7 @@ class ConfigGetter
         'pivotColumnsData' => 'columns.pivots',
         'intervalColumnData' => 'columns.intervals',
         'timestampData' => 'columns.timestamp_key',
-        'aggregateData' => 'columns.aggregates'
+        'aggregateData' => 'columns.aggregates',
     ];
 
     /**
@@ -266,7 +266,6 @@ class ConfigGetter
             }
         }
     }
-
 
     /**
      * Magic getter for config variables

@@ -65,8 +65,6 @@ class ReportingRepository
                             /* Add no index */
                             break;
                     }
-
-
                 });
 
                 $table->engine = 'InnoDB';

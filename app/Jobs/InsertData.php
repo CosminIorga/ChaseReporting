@@ -67,11 +67,6 @@ class InsertData extends DefaultJob
      */
     protected function validateInput()
     {
-        /* Check if received data is array */
-        if (!is_array($this->data)) {
-            throw new InsertDataException(InsertDataException::INVALID_DATA_FORMAT);
-        }
-
         /* Check if array is empty */
         if (empty($this->data)) {
             throw new InsertDataException(InsertDataException::DATA_IS_EMPTY);
@@ -80,12 +75,7 @@ class InsertData extends DefaultJob
         $requiredColumns = $this->computeRequiredColumns();
 
         /* Iterate through data array */
-        array_walk($this->data, function ($record) use ($requiredColumns) {
-            /* Check if each subsequent array element must be an array */
-            if (!is_array($record)) {
-                throw new InsertDataException(InsertDataException::RECORD_IS_NOT_ARRAY);
-            }
-
+        array_walk($this->data, function (array $record) use ($requiredColumns) {
             /* Check each record contains required columns such as pivots and timestamp column */
             $requiredColumns->each(function ($requiredColumn) use ($record) {
                 if (!array_key_exists($requiredColumn, $record)) {

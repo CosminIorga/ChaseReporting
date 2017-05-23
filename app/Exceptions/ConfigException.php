@@ -19,6 +19,8 @@ class ConfigException extends \Exception implements DefaultException
     const COLUMN_DATA_INCOMPLETE = 'Column data is incomplete. Missing key: %s';
     const AGGREGATE_DATA_INCOMPLETE = 'Aggregate data is incomplete. Missing key: %s';
     const UNKNOWN_AGGREGATE_JSON_NAME = 'Unknown aggregate json name. Given: %s';
+    const INCOMPLETE_FETCH_DATA = 'Incomplete fetch data. Missing: %s';
+    const INCOMPLETE_FETCH_RECORD = 'Incomplete fetch record. Missing: %s';
 
     public function report()
     {

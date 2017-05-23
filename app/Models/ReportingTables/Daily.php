@@ -55,11 +55,14 @@ class Daily extends ReportingTable
 
     /**
      * Function used to retrieve the first datetime at which the table should hold information
+     * @param Carbon $referenceDate
      * @return Carbon
      */
-    public function getBaseDate(): Carbon
+    public function getBaseDate(Carbon $referenceDate = null): Carbon
     {
-        return new Carbon($this->referenceDate->format('Y-m-d'));
+        $referenceDate = $referenceDate ?? $this->referenceDate;
+
+        return new Carbon($referenceDate->format('Y-m-d'));
     }
 
 }

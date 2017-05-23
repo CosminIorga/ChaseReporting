@@ -115,6 +115,6 @@ return [
                 'counter' => true
             ]
         ],
-    ]
+    ],
 
 ];

@@ -24,5 +24,16 @@ class Functions
         self::FUNCTION_DISTINCT,
     ];
 
+    /**
+     * Associated MySQL aggregate operations for given functions
+     */
+    const AGGREGATE_FUNCTION_SUM = 'SUM(%1$s)';
+    const AGGREGATE_FUNCTION_DISTINCT = 'GROUP_CONCAT(DISTINCT %1$s)';
+
+    const FUNCTIONS_TO_AGGREGATES_MAPPING = [
+        self::FUNCTION_SUM => self::AGGREGATE_FUNCTION_SUM,
+        self::FUNCTION_COUNT => self::AGGREGATE_FUNCTION_SUM,
+        self::FUNCTION_DISTINCT => self::AGGREGATE_FUNCTION_DISTINCT,
+    ];
 
 }

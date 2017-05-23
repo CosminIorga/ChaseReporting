@@ -47,11 +47,12 @@ class QuarterDay extends ReportingTable
 
     /**
      * Function used to retrieve the first datetime at which the table should hold information
+     * @param Carbon $referenceDate
      * @return Carbon
      */
-    public function getBaseDate(): Carbon
+    public function getBaseDate(Carbon $referenceDate = null): Carbon
     {
-        $referenceDate = clone $this->referenceDate;
+        $referenceDate = $referenceDate ?? clone $this->referenceDate;
 
         $fullHalves = intval($this->referenceDate->format('H') / 6);
 

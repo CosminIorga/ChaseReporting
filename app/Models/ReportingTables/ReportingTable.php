@@ -43,6 +43,16 @@ abstract class ReportingTable
     }
 
     /**
+     * Short function used to dynamically change the reference date
+     * @param Carbon $referenceDate
+     */
+    public function setReferenceDate(Carbon $referenceDate)
+    {
+        $this->referenceDate = $referenceDate;
+    }
+
+
+    /**
      * Function used to compute interval column name based on given index
      * @param int $index
      * @return string
@@ -71,9 +81,11 @@ abstract class ReportingTable
             $referenceDate = $this->referenceDate;
         }
 
-        $difference = $referenceDate->getTimestamp() - $this->getBaseDate()->getTimestamp();
+        $baseDate = is_null($referenceDate) ? $this->getBaseDate() : $this->getBaseDate($referenceDate);
 
-        $index = intval( ( $difference / ( $this->dataInterval * 60 ) ) + 1 );
+        $difference = $referenceDate->getTimestamp() - $baseDate->getTimestamp();
+
+        $index = intval(($difference / ($this->dataInterval * 60)) + 1);
 
         return $this->getIntervalColumnByIndex($index);
     }
@@ -99,8 +111,9 @@ abstract class ReportingTable
 
     /**
      * Function used to retrieve the first datetime at which the table should hold information
+     * @param Carbon $referenceDate
      * @return Carbon
      */
-    abstract public function getBaseDate(): Carbon;
+    abstract public function getBaseDate(Carbon $referenceDate = null): Carbon;
 
 }

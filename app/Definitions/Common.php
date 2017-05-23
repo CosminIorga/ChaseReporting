@@ -28,7 +28,7 @@ class Common
 
 
     /**
-     * Table intervals (In minutes)
+     * Table intervals
      */
     const TABLE_INTERVAL_QUARTER = 'quarter_day';
     const TABLE_INTERVAL_HALF = 'half_day';

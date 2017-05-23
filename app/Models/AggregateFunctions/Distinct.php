@@ -35,6 +35,9 @@ class Distinct extends DefaultFunction
         /* Remove duplicates */
         $currentValues = array_unique($currentValues);
 
+        /* Sort alphabetically current values */
+        sort($currentValues);
+
         return implode(', ', $currentValues);
     }
 
