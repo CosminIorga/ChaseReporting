@@ -94,18 +94,43 @@ class FetchData extends DefaultJob
         $this->dataRepository = $dataRepository;
 
         /* Compute necessary tables and interval columns */
-        $tablesAndColumns = $this->fetchTablesAndColumns();
+        $tablesAndColumns = $this->fetchAndMonitor('fetchTablesAndColumns');
 
         /* Transform received data, tables and columns into queryData */
-        $queryData = (new TransformFetchData())->toReportingData($this->data, $tablesAndColumns);
+        $queryData = $this->fetchAndMonitor('transformData', $tablesAndColumns);
 
         /* Retrieve results using given queryData */
-        $results = $this->dataRepository->fetchData($queryData);
+        $results = $this->fetchAndMonitor('fetchData', $queryData);
 
         /* Process results */
-        $processedResults = $this->processResults($results);
+        $processedResults = $this->fetchAndMonitor('processResults', $results);
 
-        return $processedResults;
+        /* Order results */
+        $orderedResults = $this->fetchAndMonitor('orderResults', $processedResults);
+
+        return $orderedResults;
+    }
+
+    /**
+     * Function created for debugging purposes to measure performance of each function
+     * @param string $function
+     * @param array ...$params
+     * @return mixed
+     */
+    protected function fetchAndMonitor(string $function, ... $params)
+    {
+        /* Start timer for performance benchmarks */
+        $startTime = microtime(true);
+
+        $response = call_user_func_array([$this, $function], $params);
+
+        /* Compute total operations time */
+        $endTime = microtime(true);
+        $elapsed = $endTime - $startTime;
+
+        echo "Function $function took: $elapsed seconds" . PHP_EOL;
+
+        return $response;
     }
 
     /**
@@ -160,6 +185,29 @@ class FetchData extends DefaultJob
         return $reportingTableModel;
     }
 
+    /**
+     * Function used to transform data
+     * @param array $tablesAndColumns
+     * @return array
+     */
+    protected function transformData(array $tablesAndColumns): array
+    {
+        $queryData = (new TransformFetchData())->toReportingData($this->data, $tablesAndColumns);
+
+        return $queryData;
+    }
+
+    /**
+     * Function used to fetch data
+     * @param array $queryData
+     * @return Collection
+     */
+    protected function fetchData(array $queryData): Collection
+    {
+        $results = $this->dataRepository->fetchData($queryData);
+
+        return $results;
+    }
 
     /**
      * Function used to process database results and further aggregate the data
@@ -212,30 +260,54 @@ class FetchData extends DefaultJob
                     $functionModel = AggregateFunctionFactory::build($aggregateConfig[Data::AGGREGATE_FUNCTION]);
                     $functionModel->init($aggregateConfig);
 
-                    /* Check if jsonValue is array */
-                    if (!is_array($jsonValue)) {
-                        $jsonValue = [$jsonValue];
+                    if (is_null($endData[$hash][$jsonKey])) {
+                        $computedValue = $functionModel->aggregateTwoValues(
+                            $jsonValue
+                        );
+                    } else {
+                        $computedValue = $functionModel->aggregateTwoValues(
+                            $jsonValue,
+                            $endData[$hash][$jsonKey]
+                        );
                     }
 
-                    /* Iterate through jsonValue and aggregate data accordingly */
-                    foreach ($jsonValue as $subValue) {
-                        if (is_null($endData[$hash][$jsonKey])) {
-                            $computedValue = $functionModel->aggregateTwoValues(
-                                $subValue
-                            );
-                        } else {
-                            $computedValue = $functionModel->aggregateTwoValues(
-                                $subValue,
-                                $endData[$hash][$jsonKey]
-                            );
-                        }
-
-                        $endData[$hash][$jsonKey] = $computedValue;
-                    }
+                    $endData[$hash][$jsonKey] = $computedValue;
                 }
             }
         });
 
-        return $endData;
+        return array_values($endData);
+    }
+
+    /**
+     * Function used to order to processed results
+     * @param array $processedResults
+     * @return array
+     */
+    protected function orderResults(array $processedResults): array
+    {
+        $order = $this->data[Data::FETCH_ORDER_CLAUSE];
+
+        usort($processedResults, function (array $record1, array $record2) use ($order) {
+            foreach ($order as $orderClause) {
+                $orderKey = $orderClause[0];
+                $orderDir = $orderClause[1];
+
+                if ($record1[$orderKey] == $record2[$orderKey]) {
+                    continue;
+                }
+
+                if ($orderDir == 'ASC') {
+                    return $record1[$orderKey] > $record2[$orderKey];
+                }
+
+                return $record1[$orderKey] < $record2[$orderKey];
+            }
+
+            return 0;
+        });
+
+
+        return $processedResults;
     }
 }

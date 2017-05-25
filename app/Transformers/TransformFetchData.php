@@ -98,14 +98,14 @@ class TransformFetchData
 
         /* Add interval columns to select columns */
         $computedIntervalColumn = "GROUP_CONCAT(%1\$s SEPARATOR '%2\$s') AS %3\$s";
-        $columnsStringed = implode(', ', array_map(function ($column) {
+        $columnsStringed = implode(', \' ' . Data::CONCAT_SEPARATOR . ' \' ,', array_map(function ($column) {
             return "IFNULL($column , '{}')";
         }, $columns));
 
         if (count($columns) > 1) {
             $selectColumns[] = sprintf(
                 $computedIntervalColumn,
-                "JSON_MERGE($columnsStringed)",
+                "CONCAT($columnsStringed)",
                 Data::CONCAT_SEPARATOR,
                 Data::COLUMN_ALIAS
             );

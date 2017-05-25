@@ -132,7 +132,6 @@ class DataRepository
 
         /* Get data */
         $results = $finalQuery->get();
-
         return $results;
     }
 
