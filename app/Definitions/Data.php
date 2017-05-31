@@ -54,12 +54,11 @@ class Data
     const FETCH_QUERY_DATA_COLUMNS = 'columns';
     const FETCH_QUERY_DATA_WHERE_CLAUSE = 'where';
     const FETCH_QUERY_DATA_GROUP_CLAUSE = 'group';
-    const FETCH_QUERY_DATA_ORDER_CLAUSE = 'order';
 
     /**
      * Fetch query-specific information
      */
-    const COLUMN_ALIAS = 'preMergedData';
+    const DATA_COLUMN_ALIAS = 'data';
     const CONCAT_SEPARATOR = ' ||| ';
-
+    const HASH_COLUMN_ALIAS = 'hashColumn';
 }

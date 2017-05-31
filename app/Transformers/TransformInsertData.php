@@ -11,12 +11,14 @@ namespace App\Transformers;
 
 use App\Definitions\Columns;
 use App\Definitions\Data;
-use App\Factories\AggregateFunctionFactory;
 use App\Models\ReportingTables\ReportingTable;
 use App\Services\ConfigGetter;
+use App\Traits\Functions;
 
 class TransformInsertData
 {
+    use Functions;
+
     /**
      * The record to be parsed
      * @var array
@@ -131,15 +133,8 @@ class TransformInsertData
 
         /* Iterate over config data */
         array_walk($aggregateConfigData, function (array $aggregateConfig) use (&$aggregateData) {
-            /* Get class that handles specific function */
-            $aggregateFunctionClass = AggregateFunctionFactory::build($aggregateConfig[Data::AGGREGATE_FUNCTION]);
-
-            /* Init class */
-            $aggregateFunctionClass->init($aggregateConfig);
-
-            /* Get value for current function */
             $aggregateData[$aggregateConfig[Data::AGGREGATE_JSON_NAME]] =
-                $aggregateFunctionClass->getAggregateValue($this->record);
+                $this->getAggregateValue($this->record, $aggregateConfig);
         });
 
         /* Encode values as JSON */

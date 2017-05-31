@@ -10,22 +10,23 @@ namespace App\Jobs;
 
 
 use App\Definitions\Data;
-use App\Factories\AggregateFunctionFactory;
+use App\Exceptions\FetchDataException;
 use App\Factories\ReportingTableFactory;
 use App\Models\ReportingTables\ReportingTable;
 use App\Repositories\DataRepository;
 use App\Services\ConfigGetter;
 use App\Traits\CustomConsoleOutput;
+use App\Traits\Functions;
 use App\Transformers\TransformFetchData;
 use Carbon\Carbon;
 use DateInterval;
 use DatePeriod;
-use Exceptions\FetchDataException;
 use Illuminate\Support\Collection;
 
 class FetchData extends DefaultJob
 {
     use CustomConsoleOutput;
+    use Functions;
 
     const CONNECTION = "sync";
     const QUEUE_NAME = "insertTheData";
@@ -79,8 +80,58 @@ class FetchData extends DefaultJob
             throw new FetchDataException(FetchDataException::DATA_IS_EMPTY);
         }
 
-        //TODO: further validate input
+        /* Check if array contains necessary keys */
+        $requiredKeys = [
+            Data::FETCH_INTERVAL_START,
+            Data::FETCH_INTERVAL_END,
+            Data::FETCH_COLUMNS,
+            Data::FETCH_GROUP_CLAUSE,
+            Data::FETCH_WHERE_CLAUSE,
+            Data::FETCH_ORDER_CLAUSE
+        ];
 
+        foreach ($requiredKeys as $requiredKey) {
+            if (!array_key_exists($requiredKey, $this->data)) {
+                throw new FetchDataException(
+                    sprintf(
+                        FetchDataException::MISSING_KEY,
+                        $requiredKey
+                    )
+                );
+            }
+        }
+
+        /* Check if columns key contains only values defined in aggregates config array */
+        $aggregates = $this->configGetter->aggregateData;
+        $aggregateNames = array_column($aggregates, Data::AGGREGATE_JSON_NAME);
+
+        foreach ($this->data[Data::FETCH_COLUMNS] as $column) {
+            if (!in_array($column, $aggregateNames)) {
+                throw new FetchDataException(
+                    sprintf(
+                        FetchDataException::INVALID_COLUMN_VALUE,
+                        $column
+                    )
+                );
+            }
+        }
+
+        /* Check if groupClause key contains only values from the pivot config array */
+        $pivots = $this->configGetter->pivotColumnsData;
+        $pivotNames = array_column($pivots, Data::CONFIG_COLUMN_NAME);
+
+        foreach ($this->data[Data::FETCH_GROUP_CLAUSE] as $pivot) {
+            if (!in_array($pivot, $pivotNames)) {
+                throw new FetchDataException(
+                    sprintf(
+                        FetchDataException::INVALID_PIVOT_VALUE,
+                        $pivot
+                    )
+                );
+            }
+        }
+
+        //TODO: further validate group clause and order clause
     }
 
     /**
@@ -106,9 +157,9 @@ class FetchData extends DefaultJob
         $processedResults = $this->fetchAndMonitor('processResults', $results);
 
         /* Order results */
-        $orderedResults = $this->fetchAndMonitor('orderResults', $processedResults);
+        //$orderedResults = $this->fetchAndMonitor('orderResults', $processedResults);
 
-        return $orderedResults;
+        return $processedResults;
     }
 
     /**
@@ -216,65 +267,41 @@ class FetchData extends DefaultJob
      */
     protected function processResults(Collection $queryResults): array
     {
-        $groupColumns = $this->data[Data::FETCH_GROUP_CLAUSE];
-        $jsonKeys = $this->data[Data::FETCH_COLUMNS];
-
         $endData = [];
 
-        $queryResults->each(function (\stdClass $queryRecord) use (&$endData, $groupColumns, $jsonKeys) {
-            /* Check if hierarchy of group values exists */
-            $groupValues = [];
-            foreach ($groupColumns as $groupColumn) {
-                $groupValues[$groupColumn] = $queryRecord->{$groupColumn};
-            }
+        foreach ($queryResults as $queryRecord) {
+            $hash = $queryRecord->{Data::HASH_COLUMN_ALIAS};
 
-            $hash = md5(implode('__', $groupValues));
-
-            /* Check if hash already exists in endData */
+            /* Add pivots */
             if (!array_key_exists($hash, $endData)) {
-                $endData[$hash] = $groupValues;
+                $endData[$hash] = (array)$queryRecord;
+                $endData[$hash][Data::DATA_COLUMN_ALIAS] = [];
 
-                /* Instantiate array with values */
-                foreach ($jsonKeys as $jsonKey) {
-                    $endData[$hash][$jsonKey] = null;
-                }
+                unset($endData[$hash][Data::HASH_COLUMN_ALIAS]);
             }
 
             /* Explode pre-merged data */
-            $jsonData = explode(Data::CONCAT_SEPARATOR, $queryRecord->{Data::COLUMN_ALIAS});
+            $jsonData = explode(Data::CONCAT_SEPARATOR, $queryRecord->{Data::DATA_COLUMN_ALIAS});
 
             /* Iterate through JSON records */
             foreach ($jsonData as $jsonRecord) {
+                $endData[$hash][Data::DATA_COLUMN_ALIAS] = array_merge_recursive(
+                    $endData[$hash][Data::DATA_COLUMN_ALIAS],
+                    json_decode($jsonRecord, true)
+                );
+            }
+        }
 
-                /* Decode JSON */
-                $jsonRecord = json_decode($jsonRecord, true);
-
-                foreach ($jsonRecord as $jsonKey => $jsonValue) {
-                    /* Continue if key does not exist in needed jsonKeys */
-                    if (!in_array($jsonKey, $jsonKeys)) {
-                        continue;
-                    }
-
-                    $aggregateConfig = (ConfigGetter::Instance())->getAggregateConfigByJsonName($jsonKey);
-
-                    $functionModel = AggregateFunctionFactory::build($aggregateConfig[Data::AGGREGATE_FUNCTION]);
-                    $functionModel->init($aggregateConfig);
-
-                    if (is_null($endData[$hash][$jsonKey])) {
-                        $computedValue = $functionModel->aggregateTwoValues(
-                            $jsonValue
-                        );
-                    } else {
-                        $computedValue = $functionModel->aggregateTwoValues(
-                            $jsonValue,
-                            $endData[$hash][$jsonKey]
-                        );
-                    }
-
-                    $endData[$hash][$jsonKey] = $computedValue;
+        $endData = array_map(function (array $record) {
+            foreach ($record[Data::DATA_COLUMN_ALIAS] as $key => &$value) {
+                if (is_array($value)) {
+                    $aggregateConfig = $this->configGetter->getAggregateConfigByJsonName($key);
+                    $value = $this->aggregateValues($value, $aggregateConfig);
                 }
             }
-        });
+
+            return $record;
+        }, $endData);
 
         return array_values($endData);
     }

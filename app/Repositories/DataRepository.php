@@ -102,6 +102,8 @@ class DataRepository
      */
     public function fetchData(array $queryData): Collection
     {
+        DB::enableQueryLog();
+
         /* Set the GROUP_CONCAT length */
         $this->setGroupConcatLength();
 
@@ -132,6 +134,8 @@ class DataRepository
 
         /* Get data */
         $results = $finalQuery->get();
+
+        //dd(DB::getQueryLog());
         return $results;
     }
 

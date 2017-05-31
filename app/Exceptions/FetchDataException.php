@@ -6,7 +6,7 @@
  * Time: 17:57
  */
 
-namespace Exceptions;
+namespace App\Exceptions;
 
 
 use App\Interfaces\DefaultException;
@@ -16,7 +16,9 @@ class FetchDataException extends Exception implements DefaultException
 {
 
     const DATA_IS_EMPTY = "Data is empty";
-
+    const MISSING_KEY = "Missing key: %s";
+    const INVALID_COLUMN_VALUE = "Invalid column value. Given: %s";
+    const INVALID_PIVOT_VALUE = "Invalid pivot value. Given: %s";
 
     public function report()
     {

@@ -51,7 +51,6 @@ class TransformFetchData
                 Data::FETCH_QUERY_DATA_COLUMNS => $this->computeQueryColumns($columns),
                 Data::FETCH_QUERY_DATA_WHERE_CLAUSE => $this->computeQueryWhereClause(),
                 Data::FETCH_QUERY_DATA_GROUP_CLAUSE => $this->computeQueryGroupClause(),
-                Data::FETCH_QUERY_DATA_ORDER_CLAUSE => $this->computeQueryOrderClause(),
             ]);
 
             $queryData[] = $queryRecord;
@@ -80,7 +79,7 @@ class TransformFetchData
             Data::FETCH_QUERY_DATA_TABLE => '',
             Data::FETCH_QUERY_DATA_COLUMNS => [],
             Data::FETCH_QUERY_DATA_WHERE_CLAUSE => [],
-            Data::FETCH_QUERY_DATA_GROUP_CLAUSE => []
+            Data::FETCH_QUERY_DATA_GROUP_CLAUSE => [],
         ];
     }
 
@@ -96,9 +95,21 @@ class TransformFetchData
         /* Add group columns to select columns */
         $selectColumns = array_merge($selectColumns, $this->fetchData[Data::FETCH_GROUP_CLAUSE]);
 
+        /* Add hash column computed from group columns */
+        $selectColumns = array_merge(
+            $selectColumns,
+            [
+                sprintf(
+                    "TO_BASE64(CONCAT(%1\$s)) AS %2\$s",
+                    implode(', ', $this->fetchData[Data::FETCH_GROUP_CLAUSE]),
+                    Data::HASH_COLUMN_ALIAS
+                )
+            ]
+        );
+
         /* Add interval columns to select columns */
         $computedIntervalColumn = "GROUP_CONCAT(%1\$s SEPARATOR '%2\$s') AS %3\$s";
-        $columnsStringed = implode(', \' ' . Data::CONCAT_SEPARATOR . ' \' ,', array_map(function ($column) {
+        $columnsStringed = implode(', \'' . Data::CONCAT_SEPARATOR . '\' ,', array_map(function ($column) {
             return "IFNULL($column , '{}')";
         }, $columns));
 
@@ -107,14 +118,14 @@ class TransformFetchData
                 $computedIntervalColumn,
                 "CONCAT($columnsStringed)",
                 Data::CONCAT_SEPARATOR,
-                Data::COLUMN_ALIAS
+                Data::DATA_COLUMN_ALIAS
             );
         } else {
             $selectColumns[] = sprintf(
                 $computedIntervalColumn,
                 $columnsStringed,
                 Data::CONCAT_SEPARATOR,
-                Data::COLUMN_ALIAS
+                Data::DATA_COLUMN_ALIAS
             );
         }
 
@@ -137,15 +148,6 @@ class TransformFetchData
     protected function computeQueryGroupClause(): array
     {
         return $this->fetchData[Data::FETCH_GROUP_CLAUSE];
-    }
-
-    /**
-     * Function used to comptue the query orderBy clause
-     * @return array
-     */
-    protected function computeQueryOrderClause(): array
-    {
-        return $this->fetchData[Data::FETCH_ORDER_CLAUSE];
     }
 
 }

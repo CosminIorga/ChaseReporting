@@ -21,6 +21,7 @@ class ConfigException extends \Exception implements DefaultException
     const UNKNOWN_AGGREGATE_JSON_NAME = 'Unknown aggregate json name. Given: %s';
     const INCOMPLETE_FETCH_DATA = 'Incomplete fetch data. Missing: %s';
     const INCOMPLETE_FETCH_RECORD = 'Incomplete fetch record. Missing: %s';
+    const INVALID_CONFIG_FUNCTION_RECEIVED = "Invalid config function. Given: %s";
 
     public function report()
     {

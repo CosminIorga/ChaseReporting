@@ -6,12 +6,12 @@ namespace App\Jobs;
 use App\Definitions\Columns;
 use App\Definitions\Data;
 use App\Exceptions\InsertDataException;
-use App\Factories\AggregateFunctionFactory;
 use App\Factories\ReportingTableFactory;
 use App\Models\ReportingTables\ReportingTable;
 use App\Repositories\DataRepository;
 use App\Services\ConfigGetter;
 use App\Traits\CustomConsoleOutput;
+use App\Traits\Functions;
 use App\Transformers\TransformInsertData;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -19,6 +19,7 @@ use Illuminate\Support\Collection;
 class InsertData extends DefaultJob
 {
     use CustomConsoleOutput;
+    use Functions;
 
     const CONNECTION = "sync";
     const QUEUE_NAME = "insertTheData";
@@ -204,7 +205,9 @@ class InsertData extends DefaultJob
      */
     protected function mergeRecords(array $record, array $currentRecord): array
     {
-        $mergedData = array_merge_recursive($record, $currentRecord);
+        $mergedData = array_merge_recursive(array_filter($record, function ($recordValue) {
+            return json_decode($recordValue, true) != null;
+        }), $currentRecord);
 
         $finalData = [];
         array_walk($mergedData, function ($record, $key) use (&$finalData) {
@@ -214,54 +217,27 @@ class InsertData extends DefaultJob
                 return;
             }
 
-            /* Reduce the array formed by merging */
-            $finalData[$key] = array_reduce($record, function ($result, $element) {
-                /* Skip element if it is null */
-                if (is_null($element)) {
-                    return $result;
+            $record = array_merge_recursive(
+                json_decode($record[0], true) ?? [],
+                json_decode($record[1], true) ?? []
+            );
+
+            $tempData = [];
+            foreach ($record as $jsonKey => $values) {
+                if (!is_array($values)) {
+                    $tempData[$jsonKey] = $values;
+                    continue;
                 }
 
-                /* Decide if element is JSON */
-                $decodedJson = json_decode($element, true);
+                $aggregateConfig = $this->configGetter->getAggregateConfigByJsonName($jsonKey);
 
-                /* Simply add element to result if element is not JSON and $result is null */
-                if (is_null($decodedJson)) {
-                    $result = $element;
+                $tempData[$jsonKey] = $this->aggregateValues($values, $aggregateConfig);
+            }
 
-                    return $result;
-                }
-
-                /* Initialize result if it is null */
-                if (is_null($result)) {
-                    $result = json_encode([]);
-                }
-
-                /* Decode result */
-                $result = json_decode($result, true);
-
-                /* Iterate through each json key and process it depending on associated function */
-                foreach ($decodedJson as $jsonName => $value) {
-                    /* Get aggregate config */
-                    $aggregateConfig = $this->configGetter->getAggregateConfigByJsonName($jsonName);
-
-                    /* Get class that handles the specific aggregate function */
-                    $functionClass = AggregateFunctionFactory::build($aggregateConfig[Data::AGGREGATE_FUNCTION]);
-                    $functionClass->init($aggregateConfig);
-
-                    /* Check if $result contains the current key */
-                    if (!array_key_exists($jsonName, $result)) {
-                        $result[$jsonName] = $functionClass->aggregateTwoValues($value);
-                    } else {
-                        $result[$jsonName] = $functionClass->aggregateTwoValues($value, $result[$jsonName]);
-                    }
-                }
-
-                /* Sort for consistency */
-                ksort($result);
-
-                return json_encode($result);
-            });
+            $finalData[$key] = json_encode($tempData);
         });
+
+        ksort($finalData);
 
         return $finalData;
     }
