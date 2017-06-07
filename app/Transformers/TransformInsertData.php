@@ -56,8 +56,11 @@ class TransformInsertData
         /* Compute aggregate columns */
         $aggregateColumn = $this->computeAggregateColumn();
 
-
-        return array_merge($hashColumn, $pivotColumns, $aggregateColumn);
+        return [
+            $hashColumn,
+            $pivotColumns,
+            $aggregateColumn,
+        ];
     }
 
     /**

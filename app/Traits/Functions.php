@@ -20,10 +20,10 @@ trait Functions
      * Function used to return aggregate value given record and aggregate config
      * @param array $record
      * @param array $aggregateConfig
-     * @return string
+     * @return string|int|null
      * @throws ConfigException
      */
-    protected function getAggregateValue(array $record, array $aggregateConfig): string
+    protected function getAggregateValue(array $record, array $aggregateConfig)
     {
         switch ($aggregateConfig[Data::AGGREGATE_FUNCTION]) {
             case FunctionsDefinitions::FUNCTION_SUM:
@@ -36,12 +36,12 @@ trait Functions
                 }
 
                 /* Otherwise return the value from the record */
-                return strval($record[$columnName]);
+                return $record[$columnName];
 
                 break;
             case FunctionsDefinitions::FUNCTION_COUNT:
                 /* Always return one unit. Duh ... we count here */
-                return strval(1);
+                return 1;
             default:
                 throw new ConfigException(
                     sprintf(
@@ -64,12 +64,13 @@ trait Functions
         switch ($aggregateConfig[Data::AGGREGATE_FUNCTION]) {
             case FunctionsDefinitions::FUNCTION_SUM:
             case FunctionsDefinitions::FUNCTION_COUNT:
-                return array_sum($values);
+                $result = array_sum($values);
                 break;
             case FunctionsDefinitions::FUNCTION_DISTINCT:
                 $data = array_unique(explode(', ', implode(', ', $values)));
                 sort($data);
-                return implode(', ', $data);
+                $result = implode(', ', $data);
+                break;
             default:
                 throw new ConfigException(
                     sprintf(
@@ -78,6 +79,42 @@ trait Functions
                     )
                 );
         }
+
+        return $this->parseExtra($result, $aggregateConfig);
+    }
+
+    /**
+     * Function used to parse the extra config
+     * @param mixed $result
+     * @param array $aggregateConfig
+     * @return mixed
+     * @throws ConfigException
+     */
+    protected function parseExtra($result, array $aggregateConfig)
+    {
+        $extraConfig = $aggregateConfig[Data::AGGREGATE_EXTRA] ?? [];
+
+        foreach ($extraConfig as $configKey => $configValue) {
+            switch ($configKey) {
+                case Data::AGGREGATE_EXTRA_ROUND:
+                    return round($result, $configValue);
+                    break;
+                case Data::AGGREGATE_EXTRA_COUNTER:
+                    //TODO: figure out how to implement this
+
+                    return $result;
+                    break;
+                default:
+                    throw new ConfigException(
+                        sprintf(
+                            ConfigException::INVALID_CONFIG_EXTRA_KEY_RECEIVED,
+                            $configKey
+                        )
+                    );
+            }
+        }
+
+        return $result;
     }
 
 }

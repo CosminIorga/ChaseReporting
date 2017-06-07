@@ -89,16 +89,14 @@ return [
             'name' => 'duration',
             'jsonName' => 'total_duration',
             'function' => 'sum',
-            'extra' => [
-                'round' => 2
-            ]
+            'extra' => []
         ],
         [
             'name' => 'cost',
             'jsonName' => 'total_cost',
             'function' => 'sum',
             'extra' => [
-                'round' => 2
+                'round' => 4
             ]
         ],
         [

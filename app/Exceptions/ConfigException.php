@@ -22,6 +22,7 @@ class ConfigException extends \Exception implements DefaultException
     const INCOMPLETE_FETCH_DATA = 'Incomplete fetch data. Missing: %s';
     const INCOMPLETE_FETCH_RECORD = 'Incomplete fetch record. Missing: %s';
     const INVALID_CONFIG_FUNCTION_RECEIVED = "Invalid config function. Given: %s";
+    const INVALID_CONFIG_EXTRA_KEY_RECEIVED = "Invalid config extra key. Given: %s";
 
     public function report()
     {

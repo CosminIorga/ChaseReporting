@@ -120,41 +120,72 @@ class InsertData extends DefaultJob
     ) {
         $this->dataRepository = $dataRepository;
 
-        array_walk($this->data, function (array $record) {
+        $transformedData = [];
+
+        /* Transform data */
+        array_walk($this->data, function (array $record) use (&$transformedData) {
             /* Get the reportingTableModel */
             $reportingTableModel = $this->getReportingTableModel($record);
 
             /* Compute table based on dataInterval and reference date */
             $tableName = $reportingTableModel->getTableName();
 
-            /* Set table name */
-            $this->dataRepository->setTable($tableName);
+            /* Transform current record */
+            list($hashColumn, $pivotColumns, $intervalColumns) =
+                (new TransformInsertData())->toReportingData($record, $reportingTableModel);
 
-            /* Transform record */
-            $transformedRecord = (new TransformInsertData())->toReportingData($record, $reportingTableModel);
+            /* Compute key based on hashColumn and tableName */
+            $key = current($hashColumn) . "___" . $tableName;
 
-            /* Check if record already exists with given hash */
-            $primaryKey = $this->configGetter->primaryColumnData;
-            $hash = $transformedRecord[$primaryKey[Data::CONFIG_COLUMN_NAME]];
-
-            list($recordExists, $currentRecord) = $this->checkAndReturnIfRecordExists($hash);
-
-            if ($recordExists) {
-                /* If record exists then merge current record with database record */
-                $finalRecord = $this->mergeRecords($transformedRecord, $currentRecord);
-
-                /* Compute where clause for update*/
-                $whereClause = [
-                    $primaryKey[Data::CONFIG_COLUMN_NAME] => $hash
+            if (!array_key_exists($key, $transformedData)) {
+                $transformedData[$key] = [
+                    Data::INSERT_RECORD_PRIMARY_KEY_VALUE => $hashColumn,
+                    Data::INSERT_RECORD_TABLE_NAME => $tableName,
+                    Data::INSERT_RECORD_FIXED_DATA => array_merge($hashColumn, $pivotColumns),
+                    Data::INSERT_RECORD_VOLATILE_DATA => []
                 ];
-
-                $this->dataRepository->update($finalRecord, $whereClause);
-
-            } else {
-                $finalRecord = $transformedRecord;
-
-                $this->dataRepository->create($finalRecord);
             }
+
+            $transformedData[$key][Data::INSERT_RECORD_VOLATILE_DATA] = array_merge_recursive(
+                $transformedData[$key][Data::INSERT_RECORD_VOLATILE_DATA],
+                $intervalColumns
+            );
+        });
+
+        /* Create or update records with given data */
+        array_walk($transformedData, function (array $record) {
+            /* Set repository table */
+            $this->dataRepository->setTable($record[Data::INSERT_RECORD_TABLE_NAME]);
+
+            /* Check if record exists for given hash */
+            $hashValue = current($record[Data::INSERT_RECORD_PRIMARY_KEY_VALUE]);
+
+            list($recordExists, $currentRecord) = $this->checkAndReturnIfRecordExists($hashValue);
+
+            /* Merge current data with to-be-inserted data */
+            $currentIntervalColumns = array_intersect_key($currentRecord, $record[Data::INSERT_RECORD_VOLATILE_DATA]);
+
+            $mergedIntervalColumns = $this->mergeRecords(
+                array_merge_recursive(
+                    $record[Data::INSERT_RECORD_VOLATILE_DATA],
+                    $currentIntervalColumns
+                )
+            );
+
+            /* Create new record if record does not exists */
+            if (!$recordExists) {
+                $newRecord = array_merge(
+                    $record[Data::INSERT_RECORD_FIXED_DATA],
+                    $mergedIntervalColumns
+                );
+
+                $this->dataRepository->create($newRecord);
+                return;
+            }
+
+            $this->dataRepository->update($mergedIntervalColumns, [
+                current(array_keys($record[Data::INSERT_RECORD_PRIMARY_KEY_VALUE])) => $hashValue
+            ]);
         });
     }
 
@@ -181,7 +212,6 @@ class InsertData extends DefaultJob
         return $reportingTableModel;
     }
 
-
     /**
      * Function used to check if record exists given a string hash
      * @param string $hash
@@ -198,48 +228,47 @@ class InsertData extends DefaultJob
     }
 
     /**
-     * Function used to merge two records
-     * @param array $record
-     * @param array $currentRecord
+     * Function used to merge multiple records
+     * @param array $intervals
      * @return array
      */
-    protected function mergeRecords(array $record, array $currentRecord): array
+    protected function mergeRecords(array $intervals): array
     {
-        $mergedData = array_merge_recursive(array_filter($record, function ($recordValue) {
-            return json_decode($recordValue, true) != null;
-        }), $currentRecord);
+        $mergedData = [];
 
-        $finalData = [];
-        array_walk($mergedData, function ($record, $key) use (&$finalData) {
-            /* Add if merged record is not array */
-            if (!is_array($record)) {
-                $finalData[$key] = $record;
-                return;
+        foreach ($intervals as $intervalKey => $intervalValues) {
+            if (!is_array($intervalValues)) {
+                $intervalValues = [
+                    $intervalValues
+                ];
             }
 
-            $record = array_merge_recursive(
-                json_decode($record[0], true) ?? [],
-                json_decode($record[1], true) ?? []
-            );
+            $intervalValues = array_map(function (string $intervalValue) {
+                return json_decode($intervalValue, true);
+            }, array_filter($intervalValues));
 
-            $tempData = [];
-            foreach ($record as $jsonKey => $values) {
-                if (!is_array($values)) {
-                    $tempData[$jsonKey] = $values;
-                    continue;
-                }
+            $intervalValues = call_user_func_array('array_merge_recursive', $intervalValues);
 
+            $aggregatedJson = [];
+            foreach ($intervalValues as $jsonKey => $jsonValues) {
+                /* Get the function associated to the jsonKey */
                 $aggregateConfig = $this->configGetter->getAggregateConfigByJsonName($jsonKey);
 
-                $tempData[$jsonKey] = $this->aggregateValues($values, $aggregateConfig);
+                /* Convert string and int values to array */
+                if (!is_array($jsonValues)) {
+                    $jsonValues = [
+                        $jsonValues
+                    ];
+                }
+
+                /* Aggregate the values */
+                $aggregatedJson[$jsonKey] = $this->aggregateValues($jsonValues, $aggregateConfig);
             }
 
-            $finalData[$key] = json_encode($tempData);
-        });
+            $mergedData[$intervalKey] = json_encode($aggregatedJson);
+        }
 
-        ksort($finalData);
-
-        return $finalData;
+        return $mergedData;
     }
 
 }

@@ -19,7 +19,7 @@ use App\Exceptions\ServiceException;
  * Class ConfigGetter
  * @package App\Services
  * @property string $tableInterval
- * @property string $dataInterval
+ * @property integer $dataInterval
  * @property array $primaryColumnData
  * @property array $pivotColumnsData
  * @property array $intervalColumnData

@@ -21,5 +21,4 @@ return [
      * If 'daily' option is selected but interval is less than 60, it will trigger a MySQL error of too many columns
      */
     'table_interval' => 'daily',
-
 ];

@@ -56,6 +56,8 @@ class DataRepository
      */
     public function findByHash(string $hashId): array
     {
+        //TODO: modify string hash_id to computed name
+
         $data = $this->findBy('hash_id', $hashId)->first();
 
         $data = $this->transformStdObjectToArray($data);

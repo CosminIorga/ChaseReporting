@@ -14,7 +14,7 @@ class Data
     /**
      * Value returned if to-be-inserted record does not contain the corresponding key for an aggregator
      */
-    const EMPTY_VALUE = '';
+    const EMPTY_VALUE = null;
 
     /**
      * Config column definitions (Primary Column, Pivot Columns, Interval Columns and Timestamp Column)
@@ -25,6 +25,15 @@ class Data
     const CONFIG_COLUMN_INDEX = 'index';
     const CONFIG_COLUMN_ALLOW_NULL = 'allowNull';
     const CONFIG_COLUMN_TYPE = 'type';
+
+    /**
+     * Definitions for an insert record
+     */
+    const INSERT_RECORD_PRIMARY_KEY_VALUE = "primaryKeyValue";
+    const INSERT_RECORD_TABLE_NAME = "tableName";
+    const INSERT_RECORD_FIXED_DATA = "fixedData";
+    const INSERT_RECORD_VOLATILE_DATA = "volatileData";
+
 
     /**
      * Aggregated column definitions

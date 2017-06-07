@@ -15,6 +15,7 @@ use App\Factories\ReportingTableFactory;
 use App\Models\ReportingTables\ReportingTable;
 use App\Repositories\DataRepository;
 use App\Services\ConfigGetter;
+use App\Traits\Common;
 use App\Traits\CustomConsoleOutput;
 use App\Traits\Functions;
 use App\Transformers\TransformFetchData;
@@ -27,6 +28,7 @@ class FetchData extends DefaultJob
 {
     use CustomConsoleOutput;
     use Functions;
+    use Common;
 
     const CONNECTION = "sync";
     const QUEUE_NAME = "insertTheData";
@@ -157,9 +159,9 @@ class FetchData extends DefaultJob
         $processedResults = $this->fetchAndMonitor('processResults', $results);
 
         /* Order results */
-        //$orderedResults = $this->fetchAndMonitor('orderResults', $processedResults);
+        $orderedResults = $this->fetchAndMonitor('orderResults', $processedResults);
 
-        return $processedResults;
+        return $orderedResults;
     }
 
     /**
@@ -294,6 +296,10 @@ class FetchData extends DefaultJob
 
         $endData = array_map(function (array $record) {
             foreach ($record[Data::DATA_COLUMN_ALIAS] as $key => &$value) {
+                if (!in_array($key, $this->data[Data::FETCH_COLUMNS])) {
+                    unset ($record[Data::DATA_COLUMN_ALIAS][$key]);
+                }
+
                 if (is_array($value)) {
                     $aggregateConfig = $this->configGetter->getAggregateConfigByJsonName($key);
                     $value = $this->aggregateValues($value, $aggregateConfig);
@@ -315,6 +321,12 @@ class FetchData extends DefaultJob
     {
         $order = $this->data[Data::FETCH_ORDER_CLAUSE];
 
+        /* Flatten arrays before ordering */
+        $processedResults = array_map(function ($record) {
+            return $this->flattenArray($record);
+        }, $processedResults);
+
+        /* Order arrays */
         usort($processedResults, function (array $record1, array $record2) use ($order) {
             foreach ($order as $orderClause) {
                 $orderKey = $orderClause[0];
