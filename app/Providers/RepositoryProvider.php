@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
+use App\Repositories\ConfigRepository;
 use App\Repositories\DataRepository;
-use App\Repositories\ReportingRepository as CommonRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryProvider extends ServiceProvider
@@ -25,8 +25,8 @@ class RepositoryProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton(CommonRepository::class, function () {
-            return new CommonRepository();
+        $this->app->singleton(ConfigRepository::class, function () {
+            return new ConfigRepository();
         });
 
         $this->app->singleton(DataRepository::class, function () {

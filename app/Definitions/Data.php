@@ -70,4 +70,8 @@ class Data
     const DATA_COLUMN_ALIAS = 'data';
     const CONCAT_SEPARATOR = ' ||| ';
     const HASH_COLUMN_ALIAS = 'hashColumn';
+
+    const DISTINCT_RECORDS_SEPARATOR = ', ';
+    const DISTINCT_RECORDS_COUNTER_FIELD = 'counter';
+
 }

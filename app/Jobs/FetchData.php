@@ -132,8 +132,6 @@ class FetchData extends DefaultJob
                 );
             }
         }
-
-        //TODO: further validate group clause and order clause
     }
 
     /**

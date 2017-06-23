@@ -33,11 +33,13 @@ class Columns
     const COLUMN_DATA_TYPE_STRING = 'string';
     const COLUMN_DATA_TYPE_INT = 'integer';
     const COLUMN_DATA_TYPE_JSON = 'json';
+    const COLUMN_DATA_TYPE_DATETIME = 'datetime';
 
     const AVAILABLE_COLUMN_DATA_TYPES = [
         self::COLUMN_DATA_TYPE_INT,
         self::COLUMN_DATA_TYPE_STRING,
         self::COLUMN_DATA_TYPE_JSON,
+        self::COLUMN_DATA_TYPE_DATETIME
     ];
 
 

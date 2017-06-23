@@ -9,27 +9,23 @@
 namespace App\Repositories;
 
 
+use App\Definitions\Columns;
 use App\Definitions\Data;
-use App\Traits\Common;
+use App\Models\ColumnModel;
+use App\Services\ConfigGetter;
 use DB;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
 
-class DataRepository
+class DataRepository extends DefaultRepository
 {
-    use Common;
 
     /**
      * The table name
      * @var string
      */
     private $dataTable;
-
-    /**
-     * DataRepository constructor.
-     */
-    public function __construct()
-    {
-    }
 
     /**
      * Function used to set table for DataModel
@@ -42,11 +38,78 @@ class DataRepository
 
     /**
      * Short function used to initialize the query builder
-     * @return \Illuminate\Database\Query\Builder
+     * @return Builder
      */
     protected function initQueryBuilder()
     {
-        return DB::table($this->dataTable);
+        return $this->getDataConnection()->table($this->dataTable);
+    }
+
+    /**
+     * Function used to create a reporting table
+     * @param Collection $columnDefinitions
+     * @return array
+     */
+    public function createTable(Collection $columnDefinitions): array
+    {
+        try {
+            $this->getDataSchema()->create($this->dataTable, function (Blueprint $table) use ($columnDefinitions) {
+                $columnDefinitions->each(function (ColumnModel $columnModel) use (&$table) {
+
+                    /* Create the column */
+                    $column = $table->addColumn(
+                        $columnModel->dataType,
+                        $columnModel->name,
+                        $columnModel->extra ?? []
+                    );
+
+                    if ($columnModel->allow_null) {
+                        /* @noinspection PhpUndefinedMethodInspection */
+                        $column->nullable();
+                    }
+
+                    /* Add index to column */
+                    switch ($columnModel->index) {
+                        case Columns::COLUMN_SIMPLE_INDEX:
+                            $table->index($columnModel->name);
+                            break;
+                        case Columns::COLUMN_UNIQUE_INDEX:
+                            $table->unique($columnModel->name);
+                            break;
+                        case Columns::COLUMN_PRIMARY_INDEX:
+                            $table->primary($columnModel->name);
+                            break;
+                        default:
+                            /* Add no index */
+                            break;
+                    }
+                });
+
+                $table->engine = 'InnoDB';
+            });
+        } catch (\Exception $exception) {
+            return [
+                false,
+                $exception->getMessage()
+            ];
+        }
+
+        return [
+            /* Create table success status */
+            true,
+            /* Create table message if it failed */
+            null
+        ];
+    }
+
+    /**
+     * Function used to check if tableName exists
+     * @param string $tableName
+     * @return bool
+     */
+    public function tableExists(string $tableName): bool
+    {
+        return $this->getDataSchema()->hasTable($tableName);
     }
 
     /**
@@ -56,9 +119,9 @@ class DataRepository
      */
     public function findByHash(string $hashId): array
     {
-        //TODO: modify string hash_id to computed name
+        $primaryKeyName = ((ConfigGetter::Instance())->primaryColumnData)[Data::CONFIG_COLUMN_NAME];
 
-        $data = $this->findBy('hash_id', $hashId)->first();
+        $data = $this->findBy($primaryKeyName, $hashId)->first();
 
         $data = $this->transformStdObjectToArray($data);
 
@@ -69,7 +132,7 @@ class DataRepository
      * Function used to find records by key with given value
      * @param string $key
      * @param string $value
-     * @return \Illuminate\Database\Query\Builder
+     * @return Builder
      */
     public function findBy(string $key, string $value)
     {
@@ -80,7 +143,7 @@ class DataRepository
      * Function used to create a record
      * @param array $data
      */
-    public function create(array $data)
+    public function insert(array $data)
     {
         $this->initQueryBuilder()->insert($data);
     }
@@ -96,7 +159,6 @@ class DataRepository
         $this->initQueryBuilder()->where($whereClause)->limit($limit)->update($data);
     }
 
-
     /**
      * Function used to fetch data based on given queries
      * @param array $queryData
@@ -104,12 +166,10 @@ class DataRepository
      */
     public function fetchData(array $queryData): Collection
     {
-        DB::enableQueryLog();
-
         /* Set the GROUP_CONCAT length */
         $this->setGroupConcatLength();
 
-        /** @var \Illuminate\Database\Query\Builder $finalQuery */
+        /** @var Builder $finalQuery */
         $finalQuery = null;
 
         foreach ($queryData as $data) {
@@ -137,10 +197,8 @@ class DataRepository
         /* Get data */
         $results = $finalQuery->get();
 
-        //dd(DB::getQueryLog());
         return $results;
     }
-
 
     /**
      * Set GROUP_CONCAT value for current session
@@ -148,7 +206,6 @@ class DataRepository
      */
     protected function setGroupConcatLength($value = 524288)
     {
-        DB::select(DB::raw("SET group_concat_max_len = $value"));
+        $this->getDataConnection()->select(DB::raw("SET group_concat_max_len = $value"));
     }
-    
 }

@@ -9,7 +9,7 @@ use App\Factories\ReportingTableFactory;
 use App\Models\ColumnModel;
 use App\Models\ReportingTables\ReportingTable;
 use App\Models\ResponseModel;
-use App\Repositories\ReportingRepository;
+use App\Repositories\DataRepository;
 use App\Services\ConfigGetter;
 use App\Traits\CustomConsoleOutput;
 use App\Transformers\TransformConfigColumn;
@@ -30,10 +30,10 @@ class CreateReportingTable extends DefaultJob
     protected $configGetter;
 
     /**
-     * Common Repository
-     * @var ReportingRepository
+     * Data Repository
+     * @var DataRepository
      */
-    protected $reportingRepository;
+    protected $dataRepository;
 
     /**
      * Variable used to know which reporting table it should create
@@ -98,10 +98,10 @@ class CreateReportingTable extends DefaultJob
 
 
     public function handle(
-        ReportingRepository $reportingRepository
+        DataRepository $dataRepository
     ): ResponseModel {
         /* Save repository variable as class-wide variable */
-        $this->reportingRepository = $reportingRepository;
+        $this->dataRepository = $dataRepository;
 
         /* Get class that handles the config table interval */
         $this->getReportingTableModel();
@@ -151,7 +151,7 @@ class CreateReportingTable extends DefaultJob
      */
     protected function checkIfTableExists()
     {
-        $exists = $this->reportingRepository->tableExists($this->tableName);
+        $exists = $this->dataRepository->tableExists($this->tableName);
 
         if ($exists) {
             throw new CreateTableException(
@@ -244,7 +244,11 @@ class CreateReportingTable extends DefaultJob
      */
     protected function createTable()
     {
-        list($success, $message) = $this->reportingRepository->createTable($this->tableName, $this->tableStructure);
+        /* Set table name we wish to act upon */
+        $this->dataRepository->setTable($this->tableName);
+
+        /* Create the table */
+        list($success, $message) = $this->dataRepository->createTable($this->tableStructure);
 
         if (!$success) {
             throw new CreateTableException(sprintf(

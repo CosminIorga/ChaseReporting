@@ -69,7 +69,7 @@ trait Functions
             case FunctionsDefinitions::FUNCTION_DISTINCT:
                 $data = array_unique(explode(', ', implode(', ', $values)));
                 sort($data);
-                $result = implode(', ', $data);
+                $result = implode(Data::DISTINCT_RECORDS_SEPARATOR, $data);
                 break;
             default:
                 throw new ConfigException(
@@ -100,9 +100,18 @@ trait Functions
                     return round($result, $configValue);
                     break;
                 case Data::AGGREGATE_EXTRA_COUNTER:
-                    //TODO: figure out how to implement this
+                    if (!$configValue) {
+                        return $result;
+                    }
 
-                    return $result;
+                    $jsonName = $aggregateConfig[Data::AGGREGATE_JSON_NAME];
+
+                    return [
+                        $jsonName => $result,
+                        $jsonName . "_" . Data::DISTINCT_RECORDS_COUNTER_FIELD => count(
+                            explode(Data::DISTINCT_RECORDS_SEPARATOR, $result)
+                        )
+                    ];
                     break;
                 default:
                     throw new ConfigException(

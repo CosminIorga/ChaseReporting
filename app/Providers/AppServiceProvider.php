@@ -23,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        /* Register the ChannelLogger */
+        $this->app->bind('channelLogger', 'App\Services\ChannelWriter');
     }
 }

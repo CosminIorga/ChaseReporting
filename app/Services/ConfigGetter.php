@@ -12,6 +12,7 @@ namespace App\Services;
 use App\Definitions\Columns;
 use App\Definitions\Common;
 use App\Definitions\Data;
+use App\Definitions\Logger;
 use App\Exceptions\ConfigException;
 use App\Exceptions\ServiceException;
 
@@ -25,6 +26,7 @@ use App\Exceptions\ServiceException;
  * @property array $intervalColumnData
  * @property array $timestampData
  * @property array $aggregateData
+ * @property array $loggerChannels
  */
 class ConfigGetter
 {
@@ -65,6 +67,11 @@ class ConfigGetter
     protected $_aggregateData;
 
     /**
+     * @var array
+     */
+    protected $_loggerChannels;
+
+    /**
      * Array used to store an association between column name and column type (Timestamp, Primary, Pivot, Interval)
      * @var array
      */
@@ -83,6 +90,7 @@ class ConfigGetter
         'intervalColumnData' => 'columns.intervals',
         'timestampData' => 'columns.timestamp_key',
         'aggregateData' => 'columns.aggregates',
+        'loggerChannels' => 'logger'
     ];
 
     /**
@@ -112,7 +120,7 @@ class ConfigGetter
      * @param string $tableInterval
      * @throws ConfigException
      */
-    protected function validateTableInterval(string $tableInterval)
+    protected function validateAndProcessTableInterval(string $tableInterval)
     {
         /* Check if tableInterval in allowed table intervals */
         if (!in_array($tableInterval, Common::AVAILABLE_TABLE_INTERVALS)) {
@@ -131,7 +139,7 @@ class ConfigGetter
      * @param int $dataInterval
      * @throws ConfigException
      */
-    protected function validateDataInterval(int $dataInterval)
+    protected function validateAndProcessDataInterval(int $dataInterval)
     {
         if (!in_array($dataInterval, Common::AVAILABLE_DATA_INTERVALS)) {
             throw new ConfigException(
@@ -148,19 +156,19 @@ class ConfigGetter
      * Function used to validate primary column data
      * @param array $primaryColumnData
      */
-    protected function validatePrimaryColumnData(array &$primaryColumnData)
+    protected function validateAndProcessPrimaryColumnData(array &$primaryColumnData)
     {
-        $this->validateColumnData($primaryColumnData);
+        $this->validateAndProcessColumnData($primaryColumnData);
     }
 
     /**
      * Function used to validate pivot columns data
      * @param array $pivotColumnsData
      */
-    protected function validatePivotColumnsData(array &$pivotColumnsData)
+    protected function validateAndProcessPivotColumnsData(array &$pivotColumnsData)
     {
         foreach ($pivotColumnsData as &$pivotColumnData) {
-            $this->validateColumnData($pivotColumnData);
+            $this->validateAndProcessColumnData($pivotColumnData);
         }
     }
 
@@ -168,18 +176,18 @@ class ConfigGetter
      * Function used to validate interval column data
      * @param array $intervalColumnData
      */
-    protected function validateIntervalColumnData(array &$intervalColumnData)
+    protected function validateAndProcessIntervalColumnData(array &$intervalColumnData)
     {
-        $this->validateColumnData($intervalColumnData);
+        $this->validateAndProcessColumnData($intervalColumnData);
     }
 
     /**
      * Function used to validate timestamp column data
      * @param array $timestampData
      */
-    protected function validateTimestampData(array &$timestampData)
+    protected function validateAndProcessTimestampData(array &$timestampData)
     {
-        $this->validateColumnData($timestampData);
+        $this->validateAndProcessColumnData($timestampData);
     }
 
     /**
@@ -187,7 +195,7 @@ class ConfigGetter
      * @param array $columnData
      * @throws ConfigException
      */
-    protected function validateColumnData(array &$columnData)
+    protected function validateAndProcessColumnData(array &$columnData)
     {
         /* Required keys that have to be in column data */
         $requiredKeys = [
@@ -221,10 +229,24 @@ class ConfigGetter
         }
 
         /* Validate data_type value */
-        //TODO: validate data_type value
+        if (!in_array($columnData[Data::CONFIG_COLUMN_DATA_TYPE], Columns::AVAILABLE_COLUMN_DATA_TYPES)) {
+            throw new ConfigException(
+                sprintf(
+                    ConfigException::INVALID_CONFIG_DATA_TYPE,
+                    $columnData[Data::CONFIG_COLUMN_DATA_TYPE]
+                )
+            );
+        }
 
         /* Validate index value */
-        //TODO: validate index value
+        if (!in_array($columnData[Data::CONFIG_COLUMN_INDEX], Columns::AVAILABLE_COLUMN_INDEXES)) {
+            throw new ConfigException(
+                sprintf(
+                    ConfigException::INVALID_CONFIG_INDEX,
+                    $columnData[Data::CONFIG_COLUMN_INDEX]
+                )
+            );
+        }
     }
 
     /**
@@ -232,7 +254,7 @@ class ConfigGetter
      * @param array $aggregateData
      * @throws ConfigException
      */
-    protected function validateAggregateData(array &$aggregateData)
+    protected function validateAndProcessAggregateData(array &$aggregateData)
     {
         foreach ($aggregateData as &$aggregateRecord) {
             $requiredKeys = [
@@ -266,6 +288,48 @@ class ConfigGetter
             }
         }
     }
+
+    /**
+     * Function used to validate config logger channels
+     * @param array $loggerChannels
+     * @throws ConfigException
+     */
+    protected function validateAndProcessLoggerChannels(array $loggerChannels)
+    {
+        /* Iterate over each logger channel */
+        foreach ($loggerChannels as $channel) {
+            /* Check if medium key is array */
+            if (
+                !array_key_exists(Logger::MEDIUMS, $channel)
+                || !is_array($channel[Logger::MEDIUMS])
+            ) {
+                throw new ConfigException(
+                    ConfigException::LOGGER_CHANNEL_MEDIUM_KEY_NOT_ARRAY
+                );
+            }
+
+            /* Check if it has at least one medium set */
+            if (empty($channel[Logger::MEDIUMS])) {
+                throw new ConfigException(
+                    ConfigException::LOGGER_CHANNEL_MEDIUM_NOT_EMPTY
+                );
+            }
+
+            /* Check if minLevel key exists and contains a valid value */
+            if (
+                array_key_exists(Logger::MIN_LOG_LEVEL, $channel)
+                && !in_array($channel[Logger::MIN_LOG_LEVEL], array_keys(Logger::LEVELS))
+            ) {
+                throw new ConfigException(
+                    sprintf(
+                        ConfigException::LOGGER_INVALID_MINIMUM_LOG_LEVEL,
+                        $channel[Logger::MIN_LOG_LEVEL]
+                    )
+                );
+            }
+        }
+    }
+
 
     /**
      * Magic getter for config variables
@@ -309,7 +373,7 @@ class ConfigGetter
         $data = config($this->mapping[$name]);
 
         /* Validate data */
-        $function = "validate" . ucfirst($name);
+        $function = "validateAndProcess" . ucfirst($name);
 
         if (method_exists($this, $function)) {
             $this->$function($data);

@@ -1,7 +1,7 @@
 <?php
 /**
  * A helper file for Laravel 5, to provide autocomplete information to your IDE
- * Generated for Laravel 5.4.18 on 2017-04-14.
+ * Generated for Laravel 5.4.18 on 2017-06-23.
  *
  * @author Barry vd. Heuvel <barryvdh@gmail.com>
  * @see https://github.com/barryvdh/laravel-ide-helper
@@ -11395,6 +11395,131 @@ namespace Illuminate\Support\Facades {
     }         
 }
     
+namespace App\Contracts\Facades {
+
+    class ChannelLog {
+        
+        /**
+         * Write to log based on the given channel and log level set
+         *
+         * @param string $channelName
+         * @param string $level
+         * @param string $message
+         * @param array $context
+         * @static 
+         */
+        public static function writeLog($channelName, $level, $message, $context = array())
+        {
+            return \App\Services\ChannelWriter::writeLog($channelName, $level, $message, $context);
+        }
+        
+        /**
+         * Broadcast message at "debug" severity
+         *
+         * @param string $channelName
+         * @param string $message
+         * @param array $context
+         * @static 
+         */
+        public static function debug($channelName, $message, $context)
+        {
+            return \App\Services\ChannelWriter::debug($channelName, $message, $context);
+        }
+        
+        /**
+         * Broadcast message at "info" severity
+         *
+         * @param string $channelName
+         * @param string $message
+         * @param array $context
+         * @static 
+         */
+        public static function info($channelName, $message, $context)
+        {
+            return \App\Services\ChannelWriter::info($channelName, $message, $context);
+        }
+        
+        /**
+         * Broadcast message at "notice" severity
+         *
+         * @param string $channelName
+         * @param string $message
+         * @param array $context
+         * @static 
+         */
+        public static function notice($channelName, $message, $context)
+        {
+            return \App\Services\ChannelWriter::notice($channelName, $message, $context);
+        }
+        
+        /**
+         * Broadcast message at "warning" severity
+         *
+         * @param string $channelName
+         * @param string $message
+         * @param array $context
+         * @static 
+         */
+        public static function warning($channelName, $message, $context)
+        {
+            return \App\Services\ChannelWriter::warning($channelName, $message, $context);
+        }
+        
+        /**
+         * Broadcast message at "error" severity
+         *
+         * @param string $channelName
+         * @param string $message
+         * @param array $context
+         * @static 
+         */
+        public static function error($channelName, $message, $context)
+        {
+            return \App\Services\ChannelWriter::error($channelName, $message, $context);
+        }
+        
+        /**
+         * Broadcast message at "critical" severity
+         *
+         * @param string $channelName
+         * @param string $message
+         * @param array $context
+         * @static 
+         */
+        public static function critical($channelName, $message, $context)
+        {
+            return \App\Services\ChannelWriter::critical($channelName, $message, $context);
+        }
+        
+        /**
+         * Broadcast message at "alert" severity
+         *
+         * @param string $channelName
+         * @param string $message
+         * @param array $context
+         * @static 
+         */
+        public static function alert($channelName, $message, $context)
+        {
+            return \App\Services\ChannelWriter::alert($channelName, $message, $context);
+        }
+        
+        /**
+         * Broadcast message at "emergency" severity
+         *
+         * @param string $channelName
+         * @param string $message
+         * @param array $context
+         * @static 
+         */
+        public static function emergency($channelName, $message, $context)
+        {
+            return \App\Services\ChannelWriter::emergency($channelName, $message, $context);
+        }
+        
+    }         
+}
+    
     
 namespace {
 
@@ -13420,6 +13545,8 @@ namespace {
             return \Illuminate\Database\Query\Builder::macroCall($method, $parameters);
         }
         }
+    
+    class ChannelLog extends \App\Contracts\Facades\ChannelLog {}
     
 }
 

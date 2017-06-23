@@ -78,7 +78,7 @@ return [
     */
 
     'failed' => [
-        'database' => env('DB_CONNECTION', 'mysql'),
+        'database' => env('DB_DATA_CONNECTION', 'mysql'),
         'table' => 'failed_jobs',
     ],
 

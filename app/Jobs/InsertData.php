@@ -179,7 +179,7 @@ class InsertData extends DefaultJob
                     $mergedIntervalColumns
                 );
 
-                $this->dataRepository->create($newRecord);
+                $this->dataRepository->insert($newRecord);
                 return;
             }
 
