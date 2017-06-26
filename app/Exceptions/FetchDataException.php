@@ -9,10 +9,8 @@
 namespace App\Exceptions;
 
 
-use App\Interfaces\DefaultException;
-use Exception;
 
-class FetchDataException extends Exception implements DefaultException
+class FetchDataException extends DefaultException
 {
 
     const DATA_IS_EMPTY = "Data is empty";
@@ -22,6 +20,6 @@ class FetchDataException extends Exception implements DefaultException
 
     public function report()
     {
-        // TODO: Implement report() method.
+        \ChannelLog::error('fetching', $this->getMessage(), $this->getContext());
     }
 }

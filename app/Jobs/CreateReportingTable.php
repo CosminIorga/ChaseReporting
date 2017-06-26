@@ -12,6 +12,7 @@ use App\Models\ResponseModel;
 use App\Repositories\DataRepository;
 use App\Services\ConfigGetter;
 use App\Traits\CustomConsoleOutput;
+use App\Traits\LogHelper;
 use App\Transformers\TransformConfigColumn;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -19,6 +20,7 @@ use Illuminate\Support\Collection;
 class CreateReportingTable extends DefaultJob
 {
     use CustomConsoleOutput;
+    use LogHelper;
 
     const CONNECTION = "sync";
     const QUEUE_NAME = "createReportingTable";
@@ -78,6 +80,8 @@ class CreateReportingTable extends DefaultJob
     public function __construct(Carbon $referenceDate)
     {
         $this->init($referenceDate);
+
+        $this->setChannel('create-table');
     }
 
     /**
@@ -251,11 +255,13 @@ class CreateReportingTable extends DefaultJob
         list($success, $message) = $this->dataRepository->createTable($this->tableStructure);
 
         if (!$success) {
-            throw new CreateTableException(sprintf(
-                CreateTableException::TABLE_FAILED_TO_CREATE,
-                $this->tableName,
-                $message ?? CreateTableException::UNKNOWN_REASON
-            ));
+            throw new CreateTableException(
+                sprintf(
+                    CreateTableException::TABLE_FAILED_TO_CREATE,
+                    $this->tableName,
+                    $message ?? CreateTableException::UNKNOWN_REASON
+                )
+            );
         }
     }
 }

@@ -76,12 +76,24 @@ class ChannelWriter extends ChannelWriterHelper
     }
 
     /**
+     * Magic method for calling logging methods
+     * @param string $func
+     * @param array $params
+     */
+    public function __call(string $func, array $params)
+    {
+        if (in_array($func, array_keys($this->levels))) {
+            $this->writeLog($params[0], $func, $params[1]);
+        }
+    }
+
+    /**
      * Broadcast message at "debug" severity
      * @param string $channelName
      * @param string $message
      * @param array $context
      */
-    public function debug(string $channelName, string $message, array $context)
+    public function debug(string $channelName, string $message, array $context = [])
     {
         $this->writeLog($channelName, 'debug', $message, $context);
     }
@@ -92,7 +104,7 @@ class ChannelWriter extends ChannelWriterHelper
      * @param string $message
      * @param array $context
      */
-    public function info(string $channelName, string $message, array $context)
+    public function info(string $channelName, string $message, array $context = [])
     {
         $this->writeLog($channelName, 'info', $message, $context);
     }
@@ -103,7 +115,7 @@ class ChannelWriter extends ChannelWriterHelper
      * @param string $message
      * @param array $context
      */
-    public function notice(string $channelName, string $message, array $context)
+    public function notice(string $channelName, string $message, array $context = [])
     {
         $this->writeLog($channelName, 'notice', $message, $context);
     }
@@ -114,7 +126,7 @@ class ChannelWriter extends ChannelWriterHelper
      * @param string $message
      * @param array $context
      */
-    public function warning(string $channelName, string $message, array $context)
+    public function warning(string $channelName, string $message, array $context = [])
     {
         $this->writeLog($channelName, 'warning', $message, $context);
     }
@@ -125,7 +137,7 @@ class ChannelWriter extends ChannelWriterHelper
      * @param string $message
      * @param array $context
      */
-    public function error(string $channelName, string $message, array $context)
+    public function error(string $channelName, string $message, array $context = [])
     {
         $this->writeLog($channelName, 'error', $message, $context);
     }
@@ -136,7 +148,7 @@ class ChannelWriter extends ChannelWriterHelper
      * @param string $message
      * @param array $context
      */
-    public function critical(string $channelName, string $message, array $context)
+    public function critical(string $channelName, string $message, array $context = [])
     {
         $this->writeLog($channelName, 'critical', $message, $context);
     }
@@ -147,7 +159,7 @@ class ChannelWriter extends ChannelWriterHelper
      * @param string $message
      * @param array $context
      */
-    public function alert(string $channelName, string $message, array $context)
+    public function alert(string $channelName, string $message, array $context = [])
     {
         $this->writeLog($channelName, 'alert', $message, $context);
     }
@@ -158,7 +170,7 @@ class ChannelWriter extends ChannelWriterHelper
      * @param string $message
      * @param array $context
      */
-    public function emergency(string $channelName, string $message, array $context)
+    public function emergency(string $channelName, string $message, array $context = [])
     {
         $this->writeLog($channelName, 'emergency', $message, $context);
     }

@@ -9,15 +9,14 @@
 namespace App\Exceptions;
 
 
-use App\Interfaces\DefaultException;
 
-class ServiceException extends \Exception implements DefaultException
+class ServiceException extends DefaultException
 {
 
     const SERVICE_GETTER_INVALID_FUNCTION = 'Computer not defined for variable %s';
 
     public function report()
     {
-        // TODO: Implement report() method.
+        \ChannelLog::error('default_channel', $this->getMessage(), $this->getContext());
     }
 }

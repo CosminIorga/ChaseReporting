@@ -216,7 +216,8 @@ class ConfigGetter
                     sprintf(
                         ConfigException::COLUMN_DATA_INCOMPLETE,
                         $requiredKey
-                    )
+                    ),
+                    $columnData
                 );
             }
         }
@@ -234,7 +235,8 @@ class ConfigGetter
                 sprintf(
                     ConfigException::INVALID_CONFIG_DATA_TYPE,
                     $columnData[Data::CONFIG_COLUMN_DATA_TYPE]
-                )
+                ),
+                $columnData
             );
         }
 
@@ -244,7 +246,8 @@ class ConfigGetter
                 sprintf(
                     ConfigException::INVALID_CONFIG_INDEX,
                     $columnData[Data::CONFIG_COLUMN_INDEX]
-                )
+                ),
+                $columnData
             );
         }
     }
@@ -275,7 +278,8 @@ class ConfigGetter
                         sprintf(
                             ConfigException::AGGREGATE_DATA_INCOMPLETE,
                             $requiredKey
-                        )
+                        ),
+                        $aggregateData
                     );
                 }
             }

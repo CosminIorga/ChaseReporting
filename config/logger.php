@@ -18,10 +18,33 @@ return [
         ]
     ],
 
-    'another_channel' => [
-        'min_level' => 'warning',
+    /**
+     * Channel used exclusively for logs related to reporting table creation
+     */
+    'creation' => [
+        'min_level' => 'debug',
         'mediums' => [
             'registerToFileSystem' => true,
         ]
     ],
+
+    /**
+     * Channel used exclusively for logs related to reporting table data insertion
+     */
+    'insertion' => [
+        'min_level' => 'debug',
+        'mediums' => [
+            'registerToFileSystem' => true,
+        ]
+    ],
+
+    /**
+     * Channel used exclusively for logs related to data fetching from reporting tables
+     */
+    'fetching' => [
+        'min_level' => 'debug',
+        'mediums' => [
+            'registerToFileSystem' => true,
+        ]
+    ]
 ];

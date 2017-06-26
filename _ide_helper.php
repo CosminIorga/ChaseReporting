@@ -1,7 +1,7 @@
 <?php
 /**
  * A helper file for Laravel 5, to provide autocomplete information to your IDE
- * Generated for Laravel 5.4.18 on 2017-06-23.
+ * Generated for Laravel 5.4.18 on 2017-06-26.
  *
  * @author Barry vd. Heuvel <barryvdh@gmail.com>
  * @see https://github.com/barryvdh/laravel-ide-helper
@@ -11421,7 +11421,7 @@ namespace App\Contracts\Facades {
          * @param array $context
          * @static 
          */
-        public static function debug($channelName, $message, $context)
+        public static function debug($channelName, $message, $context = array())
         {
             return \App\Services\ChannelWriter::debug($channelName, $message, $context);
         }
@@ -11434,7 +11434,7 @@ namespace App\Contracts\Facades {
          * @param array $context
          * @static 
          */
-        public static function info($channelName, $message, $context)
+        public static function info($channelName, $message, $context = array())
         {
             return \App\Services\ChannelWriter::info($channelName, $message, $context);
         }
@@ -11447,7 +11447,7 @@ namespace App\Contracts\Facades {
          * @param array $context
          * @static 
          */
-        public static function notice($channelName, $message, $context)
+        public static function notice($channelName, $message, $context = array())
         {
             return \App\Services\ChannelWriter::notice($channelName, $message, $context);
         }
@@ -11460,7 +11460,7 @@ namespace App\Contracts\Facades {
          * @param array $context
          * @static 
          */
-        public static function warning($channelName, $message, $context)
+        public static function warning($channelName, $message, $context = array())
         {
             return \App\Services\ChannelWriter::warning($channelName, $message, $context);
         }
@@ -11473,7 +11473,7 @@ namespace App\Contracts\Facades {
          * @param array $context
          * @static 
          */
-        public static function error($channelName, $message, $context)
+        public static function error($channelName, $message, $context = array())
         {
             return \App\Services\ChannelWriter::error($channelName, $message, $context);
         }
@@ -11486,7 +11486,7 @@ namespace App\Contracts\Facades {
          * @param array $context
          * @static 
          */
-        public static function critical($channelName, $message, $context)
+        public static function critical($channelName, $message, $context = array())
         {
             return \App\Services\ChannelWriter::critical($channelName, $message, $context);
         }
@@ -11499,7 +11499,7 @@ namespace App\Contracts\Facades {
          * @param array $context
          * @static 
          */
-        public static function alert($channelName, $message, $context)
+        public static function alert($channelName, $message, $context = array())
         {
             return \App\Services\ChannelWriter::alert($channelName, $message, $context);
         }
@@ -11512,7 +11512,7 @@ namespace App\Contracts\Facades {
          * @param array $context
          * @static 
          */
-        public static function emergency($channelName, $message, $context)
+        public static function emergency($channelName, $message, $context = array())
         {
             return \App\Services\ChannelWriter::emergency($channelName, $message, $context);
         }

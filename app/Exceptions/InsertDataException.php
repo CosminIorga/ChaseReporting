@@ -9,9 +9,7 @@
 namespace App\Exceptions;
 
 
-use App\Interfaces\DefaultException;
-
-class InsertDataException extends \Exception implements DefaultException
+class InsertDataException extends DefaultException
 {
 
     const DATA_IS_EMPTY = 'Received data is an empty array';
@@ -19,6 +17,6 @@ class InsertDataException extends \Exception implements DefaultException
 
     public function report()
     {
-        // TODO: Implement report() method.
+        \ChannelLog::error('insertion', $this->getMessage(), $this->getContext());
     }
 }

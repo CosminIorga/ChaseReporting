@@ -9,16 +9,12 @@
 namespace App\Exceptions;
 
 
-use App\Interfaces\DefaultException;
+
 use App\Interfaces\DefaultValidator;
 
-class ValidatorException extends \Exception implements DefaultException
+class ValidatorException extends DefaultException
 {
 
-
-    /**
-     * Exception messages
-     */
     const INVALID_VALIDATOR_CLASS_GIVEN = "Invalid validator class given ";
     const VALIDATOR_DOES_NOT_HAVE_VALIDATE_FUNCTION =
         "Method '" .
@@ -30,6 +26,7 @@ class ValidatorException extends \Exception implements DefaultException
 
     public function report()
     {
+        /* Do not report for validation */
         return;
     }
 }

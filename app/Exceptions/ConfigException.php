@@ -9,9 +9,7 @@
 namespace App\Exceptions;
 
 
-use App\Interfaces\DefaultException;
-
-class ConfigException extends \Exception implements DefaultException
+class ConfigException extends DefaultException
 {
 
     const TABLE_INTERVAL_NOT_ALLOWED = 'Table interval not allowed. Given: %s. Allowed %s';
@@ -33,8 +31,9 @@ class ConfigException extends \Exception implements DefaultException
     const LOGGER_CHANNEL_MEDIUM_NOT_EMPTY = 'Logger channel medium most not be empty';
     const LOGGER_INVALID_MINIMUM_LOG_LEVEL = 'Invalid minimum log level received. Given: %s';
 
+
     public function report()
     {
-        // TODO: Implement report() method.
+        \ChannelLog::error('default_channel', $this->getMessage(), $this->getContext());
     }
 }

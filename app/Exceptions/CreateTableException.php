@@ -9,15 +9,10 @@
 namespace App\Exceptions;
 
 
-use App\Interfaces\DefaultException;
 
-class CreateTableException extends \Exception implements DefaultException
+class CreateTableException extends DefaultException
 {
 
-
-    /**
-     * Exception messages
-     */
     const INVALID_TABLE_INTERVAL = "Received invalid table interval: %s";
     const INVALID_DATA_INTERVAL = "Received invalid data interval: %s";
     const DATA_INTERVAL_NOT_ALLOWED = "Data interval not allowed for table type: %s";
@@ -28,8 +23,9 @@ class CreateTableException extends \Exception implements DefaultException
     const TABLE_ALREADY_EXISTS = "Table %s already exists";
     const UNKNOWN_REASON = "Unknown reason";
 
+
     public function report()
     {
-        // TODO: Implement report() method.
+        \ChannelLog::error('creation', $this->getMessage(), $this->getContext());
     }
 }

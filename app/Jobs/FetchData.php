@@ -98,7 +98,8 @@ class FetchData extends DefaultJob
                     sprintf(
                         FetchDataException::MISSING_KEY,
                         $requiredKey
-                    )
+                    ),
+                    $this->data
                 );
             }
         }
@@ -113,7 +114,8 @@ class FetchData extends DefaultJob
                     sprintf(
                         FetchDataException::INVALID_COLUMN_VALUE,
                         $column
-                    )
+                    ),
+                    $this->data
                 );
             }
         }
@@ -128,7 +130,8 @@ class FetchData extends DefaultJob
                     sprintf(
                         FetchDataException::INVALID_PIVOT_VALUE,
                         $pivot
-                    )
+                    ),
+                    $this->data
                 );
             }
         }
