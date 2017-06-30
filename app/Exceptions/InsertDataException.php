@@ -9,6 +9,8 @@
 namespace App\Exceptions;
 
 
+use App\Definitions\Logger;
+
 class InsertDataException extends DefaultException
 {
 
@@ -17,6 +19,6 @@ class InsertDataException extends DefaultException
 
     public function report()
     {
-        \ChannelLog::error('insertion', $this->getMessage(), $this->getContext());
+        \ChannelLog::error(Logger::INSERT_DATA_CHANNEL, $this->getMessage(), $this->getContext());
     }
 }

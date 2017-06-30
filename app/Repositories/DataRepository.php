@@ -166,9 +166,6 @@ class DataRepository extends DefaultRepository
      */
     public function fetchData(array $queryData): Collection
     {
-        /* Set the GROUP_CONCAT length */
-        $this->setGroupConcatLength();
-
         /** @var Builder $finalQuery */
         $finalQuery = null;
 
@@ -194,18 +191,11 @@ class DataRepository extends DefaultRepository
             }
         }
 
+
         /* Get data */
         $results = $finalQuery->get();
 
         return $results;
     }
 
-    /**
-     * Set GROUP_CONCAT value for current session
-     * @param int $value (Default. 2^19)
-     */
-    protected function setGroupConcatLength($value = 524288)
-    {
-        $this->getDataConnection()->select(DB::raw("SET group_concat_max_len = $value"));
-    }
 }

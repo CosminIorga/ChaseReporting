@@ -259,17 +259,15 @@ class ConfigGetter
      */
     protected function validateAndProcessAggregateData(array &$aggregateData)
     {
-        foreach ($aggregateData as &$aggregateRecord) {
+        foreach ($aggregateData as $aggregateKey => &$aggregateRecord) {
             $requiredKeys = [
-                Data::AGGREGATE_NAME,
-                Data::AGGREGATE_JSON_NAME,
-                Data::AGGREGATE_FUNCTION
+                Data::AGGREGATE_INPUT_NAME,
+                Data::AGGREGATE_INPUT_FUNCTION,
+                Data::AGGREGATE_OUTPUT_FUNCTIONS
             ];
 
             /* Values assumed if key not found */
-            $defaultValues = [
-                Data::AGGREGATE_EXTRA => []
-            ];
+            $defaultValues = [];
 
             /* Validate required data */
             foreach ($requiredKeys as $requiredKey) {
@@ -454,18 +452,18 @@ class ConfigGetter
             $this->_aggregateData = $this->computeValue('aggregateData');
         }
 
-        foreach ($this->_aggregateData as $aggregateRecord) {
-            if ($aggregateRecord[Data::AGGREGATE_JSON_NAME] == $jsonName) {
-                return $aggregateRecord;
-            }
+        if (!array_key_exists($jsonName, $this->_aggregateData)) {
+            throw new ConfigException(
+                sprintf(
+                    ConfigException::UNKNOWN_AGGREGATE_JSON_NAME,
+                    $jsonName
+                )
+            );
         }
 
-        throw new ConfigException(
-            sprintf(
-                ConfigException::UNKNOWN_AGGREGATE_JSON_NAME,
-                $jsonName
-            )
-        );
+        return array_merge($this->_aggregateData[$jsonName], [
+            Data::AGGREGATE_JSON_NAME => $jsonName
+        ]);
     }
 
 }

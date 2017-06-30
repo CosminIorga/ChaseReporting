@@ -2,20 +2,19 @@
 /**
  * Created by PhpStorm.
  * User: chase
- * Date: 30/05/17
- * Time: 13:07
+ * Date: 30/06/17
+ * Time: 13:25
  */
 
 namespace App\Traits;
 
 
 use App\Definitions\Data;
-use App\Definitions\Functions as FunctionsDefinitions;
+use App\Definitions\Functions;
 use App\Exceptions\ConfigException;
 
-trait Functions
+trait InputFunctions
 {
-
     /**
      * Function used to return aggregate value given record and aggregate config
      * @param array $record
@@ -25,11 +24,10 @@ trait Functions
      */
     protected function getAggregateValue(array $record, array $aggregateConfig)
     {
-        switch ($aggregateConfig[Data::AGGREGATE_FUNCTION]) {
-            case FunctionsDefinitions::FUNCTION_SUM:
-            case FunctionsDefinitions::FUNCTION_DISTINCT:
-                $columnName = $aggregateConfig[Data::AGGREGATE_NAME];
+        $columnName = $aggregateConfig[Data::AGGREGATE_INPUT_NAME];
 
+        switch ($aggregateConfig[Data::AGGREGATE_INPUT_FUNCTION]) {
+            case Functions::FUNCTION_SUM:
                 /* Return empty string if value does not exist in given record */
                 if (!array_key_exists($columnName, $record)) {
                     return Data::EMPTY_VALUE;
@@ -37,16 +35,19 @@ trait Functions
 
                 /* Otherwise return the value from the record */
                 return $record[$columnName];
+            case Functions::FUNCTION_COUNT:
+                /* Always return one unit if input_name is null */
+                if (is_null($columnName)) {
+                    return Data::ONE_UNIT;
+                }
 
-                break;
-            case FunctionsDefinitions::FUNCTION_COUNT:
-                /* Always return one unit. Duh ... we count here */
-                return 1;
+                /* Otherwise evaluate column and check if value is considered non-zero */
+                return intval(boolval($record[$columnName]));
             default:
                 throw new ConfigException(
                     sprintf(
                         ConfigException::INVALID_CONFIG_FUNCTION_RECEIVED,
-                        $aggregateConfig[Data::AGGREGATE_FUNCTION]
+                        $aggregateConfig[Data::AGGREGATE_INPUT_FUNCTION]
                     )
                 );
         }
@@ -61,21 +62,22 @@ trait Functions
      */
     protected function aggregateValues(array $values, array $aggregateConfig)
     {
-        switch ($aggregateConfig[Data::AGGREGATE_FUNCTION]) {
-            case FunctionsDefinitions::FUNCTION_SUM:
-            case FunctionsDefinitions::FUNCTION_COUNT:
+        switch ($aggregateConfig[Data::AGGREGATE_INPUT_FUNCTION]) {
+            case Functions::FUNCTION_SUM:
+            case Functions::FUNCTION_COUNT:
                 $result = array_sum($values);
                 break;
-            case FunctionsDefinitions::FUNCTION_DISTINCT:
-                $data = array_unique(explode(', ', implode(', ', $values)));
-                sort($data);
-                $result = implode(Data::DISTINCT_RECORDS_SEPARATOR, $data);
+            case Functions::FUNCTION_MAX:
+                $result = max($values);
+                break;
+            case Functions::FUNCTION_MIN:
+                $result = min($values);
                 break;
             default:
                 throw new ConfigException(
                     sprintf(
                         ConfigException::INVALID_CONFIG_FUNCTION_RECEIVED,
-                        $aggregateConfig[Data::AGGREGATE_FUNCTION]
+                        $aggregateConfig[Data::AGGREGATE_INPUT_FUNCTION]
                     )
                 );
         }
@@ -99,20 +101,6 @@ trait Functions
                 case Data::AGGREGATE_EXTRA_ROUND:
                     return round($result, $configValue);
                     break;
-                case Data::AGGREGATE_EXTRA_COUNTER:
-                    if (!$configValue) {
-                        return $result;
-                    }
-
-                    $jsonName = $aggregateConfig[Data::AGGREGATE_JSON_NAME];
-
-                    return [
-                        $jsonName => $result,
-                        $jsonName . "_" . Data::DISTINCT_RECORDS_COUNTER_FIELD => count(
-                            explode(Data::DISTINCT_RECORDS_SEPARATOR, $result)
-                        )
-                    ];
-                    break;
                 default:
                     throw new ConfigException(
                         sprintf(
@@ -125,5 +113,4 @@ trait Functions
 
         return $result;
     }
-
 }

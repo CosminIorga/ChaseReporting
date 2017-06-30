@@ -11,6 +11,9 @@
  * Each channel name must define the "mediums" array and it should not be empty
  */
 return [
+    /**
+     * This is the default channel used for general logging
+     */
     'default_channel' => [
         'min_level' => 'info',
         'mediums' => [

@@ -10,11 +10,13 @@ namespace App\Transformers;
 
 
 use App\Definitions\Data;
+use App\Definitions\Functions as FunctionsDefinitions;
 use App\Services\ConfigGetter;
+use App\Traits\OutputFunctions;
 
 class TransformFetchData
 {
-
+    use OutputFunctions;
 
     /**
      * The data to be parsed
@@ -29,8 +31,8 @@ class TransformFetchData
     protected $configGetter;
 
     /**
-     * Transform fetch data using the tablesAndColumns array to create an array of arrays with necessary information
-     * to perform a single query from each sub-array
+     * Transform fetch data using the tablesAndColumns array to create an array of arrays
+     * with necessary information to perform a single query from each sub-array
      * @param array $fetchData
      * @param array $tablesAndColumns
      * @return array
@@ -96,37 +98,24 @@ class TransformFetchData
         $selectColumns = array_merge($selectColumns, $this->fetchData[Data::FETCH_GROUP_CLAUSE]);
 
         /* Add hash column computed from group columns */
-        $selectColumns = array_merge(
-            $selectColumns,
-            [
-                sprintf(
-                    "TO_BASE64(CONCAT(%1\$s)) AS %2\$s",
-                    implode(', ', $this->fetchData[Data::FETCH_GROUP_CLAUSE]),
-                    Data::HASH_COLUMN_ALIAS
-                )
-            ]
+        $selectColumns[] = sprintf(
+            FunctionsDefinitions::HASH_FUNCTION,
+            implode(', ', $this->fetchData[Data::FETCH_GROUP_CLAUSE]),
+            Data::HASH_COLUMN_ALIAS
         );
 
-        /* Add interval columns to select columns */
-        $computedIntervalColumn = "GROUP_CONCAT(%1\$s SEPARATOR '%2\$s') AS %3\$s";
-        $columnsStringed = implode(', \'' . Data::CONCAT_SEPARATOR . '\' ,', array_map(function ($column) {
-            return "IFNULL($column , '{}')";
-        }, $columns));
+        /* Iterate through fetch columns */
+        foreach ($this->fetchData[Data::FETCH_COLUMNS] as $jsonKey => $functions) {
+            $aggregateConfig = $this->configGetter->getAggregateConfigByJsonName($jsonKey);
 
-        if (count($columns) > 1) {
-            $selectColumns[] = sprintf(
-                $computedIntervalColumn,
-                "CONCAT($columnsStringed)",
-                Data::CONCAT_SEPARATOR,
-                Data::DATA_COLUMN_ALIAS
-            );
-        } else {
-            $selectColumns[] = sprintf(
-                $computedIntervalColumn,
-                $columnsStringed,
-                Data::CONCAT_SEPARATOR,
-                Data::DATA_COLUMN_ALIAS
-            );
+            foreach ($functions as $function => $functionExtra) {
+                $selectColumns[] = $this->mapIntervalsToQueryFunctions(
+                    $columns,
+                    $function,
+                    $functionExtra,
+                    $aggregateConfig
+                );
+            }
         }
 
         return $selectColumns;

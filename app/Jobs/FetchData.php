@@ -10,14 +10,16 @@ namespace App\Jobs;
 
 
 use App\Definitions\Data;
+use App\Definitions\Functions;
+use App\Definitions\Logger;
 use App\Exceptions\FetchDataException;
 use App\Factories\ReportingTableFactory;
 use App\Models\ReportingTables\ReportingTable;
 use App\Repositories\DataRepository;
 use App\Services\ConfigGetter;
 use App\Traits\Common;
-use App\Traits\CustomConsoleOutput;
-use App\Traits\Functions;
+use App\Traits\LogHelper;
+use App\Traits\OutputFunctions;
 use App\Transformers\TransformFetchData;
 use Carbon\Carbon;
 use DateInterval;
@@ -26,9 +28,9 @@ use Illuminate\Support\Collection;
 
 class FetchData extends DefaultJob
 {
-    use CustomConsoleOutput;
-    use Functions;
+    use OutputFunctions;
     use Common;
+    use LogHelper;
 
     const CONNECTION = "sync";
     const QUEUE_NAME = "insertTheData";
@@ -70,6 +72,7 @@ class FetchData extends DefaultJob
         $this->configGetter = ConfigGetter::Instance();
 
         $this->validateInput();
+        $this->setChannel(Logger::FETCH_DATA_CHANNEL);
     }
 
     /**
@@ -104,11 +107,11 @@ class FetchData extends DefaultJob
             }
         }
 
-        /* Check if columns key contains only values defined in aggregates config array */
         $aggregates = $this->configGetter->aggregateData;
-        $aggregateNames = array_column($aggregates, Data::AGGREGATE_JSON_NAME);
+        $aggregateNames = array_keys($aggregates);
 
-        foreach ($this->data[Data::FETCH_COLUMNS] as $column) {
+        foreach ($this->data[Data::FETCH_COLUMNS] as $column => $functions) {
+            /* Check if column is allowed */
             if (!in_array($column, $aggregateNames)) {
                 throw new FetchDataException(
                     sprintf(
@@ -118,6 +121,19 @@ class FetchData extends DefaultJob
                     $this->data
                 );
             }
+
+            /* Check if function is allowed */
+            foreach (array_keys($functions) as $function) {
+                if (!in_array($function, Functions::ALLOWED_FUNCTIONS)) {
+                    throw new FetchDataException(
+                        sprintf(
+                            FetchDataException::INVALID_FUNCTION_VALUE,
+                            $function
+                        )
+                    );
+                }
+            }
+
         }
 
         /* Check if groupClause key contains only values from the pivot config array */
@@ -145,46 +161,35 @@ class FetchData extends DefaultJob
     public function handle(
         DataRepository $dataRepository
     ): array {
-        $this->dataRepository = $dataRepository;
+        $this->debug("Fetching data started ...");
 
-        /* Compute necessary tables and interval columns */
-        $tablesAndColumns = $this->fetchAndMonitor('fetchTablesAndColumns');
-
-        /* Transform received data, tables and columns into queryData */
-        $queryData = $this->fetchAndMonitor('transformData', $tablesAndColumns);
-
-        /* Retrieve results using given queryData */
-        $results = $this->fetchAndMonitor('fetchData', $queryData);
-
-        /* Process results */
-        $processedResults = $this->fetchAndMonitor('processResults', $results);
-
-        /* Order results */
-        $orderedResults = $this->fetchAndMonitor('orderResults', $processedResults);
-
-        return $orderedResults;
-    }
-
-    /**
-     * Function created for debugging purposes to measure performance of each function
-     * @param string $function
-     * @param array ...$params
-     * @return mixed
-     */
-    protected function fetchAndMonitor(string $function, ... $params)
-    {
         /* Start timer for performance benchmarks */
         $startTime = microtime(true);
 
-        $response = call_user_func_array([$this, $function], $params);
+        $this->dataRepository = $dataRepository;
+
+        /* Compute necessary tables and interval columns */
+        $tablesAndColumns = $this->fetchTablesAndColumns();
+
+        /* Transform received data, tables and columns into queryData */
+        $queryData = $this->transformData($tablesAndColumns);
+
+        /* Retrieve results using given queryData */
+        $results = $this->fetchData($queryData);
+
+        /* Process results */
+        $processedResults = $this->processResults($results);
+
+        /* Order results */
+        $orderedResults = $this->orderResults($processedResults);
 
         /* Compute total operations time */
         $endTime = microtime(true);
         $elapsed = $endTime - $startTime;
 
-        echo "Function $function took: $elapsed seconds" . PHP_EOL;
+        $this->debug("Fetch operation time: $elapsed seconds");
 
-        return $response;
+        return $orderedResults;
     }
 
     /**
@@ -258,8 +263,16 @@ class FetchData extends DefaultJob
      */
     protected function fetchData(array $queryData): Collection
     {
+        /* Start timer for performance benchmarks */
+        $startTime = microtime(true);
+
         $results = $this->dataRepository->fetchData($queryData);
 
+        /* Compute total operations time */
+        $endTime = microtime(true);
+        $elapsed = $endTime - $startTime;
+
+        $this->debug("Fetched data in $elapsed seconds");
         return $results;
     }
 
@@ -272,45 +285,11 @@ class FetchData extends DefaultJob
     {
         $endData = [];
 
-        foreach ($queryResults as $queryRecord) {
-            $hash = $queryRecord->{Data::HASH_COLUMN_ALIAS};
-
-            /* Add pivots */
-            if (!array_key_exists($hash, $endData)) {
-                $endData[$hash] = (array)$queryRecord;
-                $endData[$hash][Data::DATA_COLUMN_ALIAS] = [];
-
-                unset($endData[$hash][Data::HASH_COLUMN_ALIAS]);
-            }
-
-            /* Explode pre-merged data */
-            $jsonData = explode(Data::CONCAT_SEPARATOR, $queryRecord->{Data::DATA_COLUMN_ALIAS});
-
-            /* Iterate through JSON records */
-            foreach ($jsonData as $jsonRecord) {
-                $endData[$hash][Data::DATA_COLUMN_ALIAS] = array_merge_recursive(
-                    $endData[$hash][Data::DATA_COLUMN_ALIAS],
-                    json_decode($jsonRecord, true)
-                );
-            }
+        foreach ($queryResults->toArray() as $result) {
+            $endData[] = (array) $result;
         }
 
-        $endData = array_map(function (array $record) {
-            foreach ($record[Data::DATA_COLUMN_ALIAS] as $key => &$value) {
-                if (!in_array($key, $this->data[Data::FETCH_COLUMNS])) {
-                    unset ($record[Data::DATA_COLUMN_ALIAS][$key]);
-                }
-
-                if (is_array($value)) {
-                    $aggregateConfig = $this->configGetter->getAggregateConfigByJsonName($key);
-                    $value = $this->aggregateValues($value, $aggregateConfig);
-                }
-            }
-
-            return $record;
-        }, $endData);
-
-        return array_values($endData);
+        return $endData;
     }
 
     /**

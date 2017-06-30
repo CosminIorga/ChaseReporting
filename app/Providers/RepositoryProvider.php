@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Repositories\ConfigRepository;
 use App\Repositories\DataRepository;
+use App\Repositories\RedisRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryProvider extends ServiceProvider
@@ -31,6 +32,10 @@ class RepositoryProvider extends ServiceProvider
 
         $this->app->singleton(DataRepository::class, function () {
             return new DataRepository();
+        });
+
+        $this->app->singleton(RedisRepository::class, function () {
+            return new RedisRepository();
         });
     }
 }

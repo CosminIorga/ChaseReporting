@@ -40,4 +40,14 @@ class Logger
      * Channel mediums
      */
     const REGISTER_TO_FILE_SYSTEM = 'registerToFileSystem';
+
+
+    /**
+     * Available channels
+     */
+    const DEFAULT_CHANNEL = 'default_channel';
+    const CREATE_TABLE_CHANNEL = 'creation';
+    const INSERT_DATA_CHANNEL = 'insertion';
+    const FETCH_DATA_CHANNEL = 'fetching';
+
 }

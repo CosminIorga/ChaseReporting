@@ -15,6 +15,7 @@ class Data
      * Value returned if to-be-inserted record does not contain the corresponding key for an aggregator
      */
     const EMPTY_VALUE = null;
+    const ONE_UNIT = 1;
 
     /**
      * Config column definitions (Primary Column, Pivot Columns, Interval Columns and Timestamp Column)
@@ -34,17 +35,17 @@ class Data
     const INSERT_RECORD_FIXED_DATA = "fixedData";
     const INSERT_RECORD_VOLATILE_DATA = "volatileData";
 
-
     /**
      * Aggregated column definitions
      */
-    const AGGREGATE_NAME = 'name';
-    const AGGREGATE_JSON_NAME = 'jsonName';
-    const AGGREGATE_FUNCTION = 'function';
+    const AGGREGATE_JSON_NAME = 'json_name';
+
+    const AGGREGATE_INPUT_NAME = 'input_name';
+    const AGGREGATE_INPUT_FUNCTION = 'input_function';
+    const AGGREGATE_OUTPUT_FUNCTIONS = 'output_functions';
     const AGGREGATE_EXTRA = 'extra';
 
     const AGGREGATE_EXTRA_ROUND = 'round';
-    const AGGREGATE_EXTRA_COUNTER = 'counter';
 
     /**
      * Fetch column definitions
@@ -67,11 +68,8 @@ class Data
     /**
      * Fetch query-specific information
      */
-    const DATA_COLUMN_ALIAS = 'data';
-    const CONCAT_SEPARATOR = ' ||| ';
+    const DATA_COLUMN_ALIAS = '%1$s_%2$s';
     const HASH_COLUMN_ALIAS = 'hashColumn';
 
-    const DISTINCT_RECORDS_SEPARATOR = ', ';
-    const DISTINCT_RECORDS_COUNTER_FIELD = 'counter';
 
 }

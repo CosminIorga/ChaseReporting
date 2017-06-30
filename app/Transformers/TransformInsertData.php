@@ -13,11 +13,11 @@ use App\Definitions\Columns;
 use App\Definitions\Data;
 use App\Models\ReportingTables\ReportingTable;
 use App\Services\ConfigGetter;
-use App\Traits\Functions;
+use App\Traits\InputFunctions;
 
 class TransformInsertData
 {
-    use Functions;
+    use InputFunctions;
 
     /**
      * The record to be parsed
@@ -135,10 +135,12 @@ class TransformInsertData
         $aggregateData = [];
 
         /* Iterate over config data */
-        array_walk($aggregateConfigData, function (array $aggregateConfig) use (&$aggregateData) {
-            $aggregateData[$aggregateConfig[Data::AGGREGATE_JSON_NAME]] =
-                $this->getAggregateValue($this->record, $aggregateConfig);
-        });
+        array_walk(
+            $aggregateConfigData,
+            function (array $aggregateConfig, string $aggregateJsonName) use (&$aggregateData) {
+                $aggregateData[$aggregateJsonName] = $this->getAggregateValue($this->record, $aggregateConfig);
+            }
+        );
 
         /* Encode values as JSON */
         $value = json_encode($aggregateData);
@@ -147,5 +149,6 @@ class TransformInsertData
             $aggregateColumnName => $value
         ];
     }
+
 
 }

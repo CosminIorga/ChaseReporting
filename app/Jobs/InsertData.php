@@ -10,16 +10,14 @@ use App\Factories\ReportingTableFactory;
 use App\Models\ReportingTables\ReportingTable;
 use App\Repositories\DataRepository;
 use App\Services\ConfigGetter;
-use App\Traits\CustomConsoleOutput;
-use App\Traits\Functions;
+use App\Traits\InputFunctions;
 use App\Transformers\TransformInsertData;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class InsertData extends DefaultJob
 {
-    use CustomConsoleOutput;
-    use Functions;
+    use InputFunctions;
 
     const CONNECTION = "sync";
     const QUEUE_NAME = "insertTheData";

@@ -10,6 +10,8 @@ namespace App\Exceptions;
 
 
 
+use App\Definitions\Logger;
+
 class CreateTableException extends DefaultException
 {
 
@@ -26,6 +28,6 @@ class CreateTableException extends DefaultException
 
     public function report()
     {
-        \ChannelLog::error('creation', $this->getMessage(), $this->getContext());
+        \ChannelLog::error(Logger::CREATE_TABLE_CHANNEL, $this->getMessage(), $this->getContext());
     }
 }

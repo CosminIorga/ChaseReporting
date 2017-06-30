@@ -85,34 +85,46 @@ return [
      *          round => Before inserting the data in reports, round the value to X decimals. Only works for numeric values
      */
     'aggregates' => [
-        [
-            'name' => 'duration',
-            'jsonName' => 'total_duration',
-            'function' => 'sum',
-            'extra' => []
-        ],
-        [
-            'name' => 'cost',
-            'jsonName' => 'total_cost',
-            'function' => 'sum',
+        'interval_duration' => [
+            'input_name' => 'duration',
+            'input_function' => 'sum',
+            'output_functions' => [
+                'sum',
+                'max',
+                'min'
+            ],
             'extra' => [
                 'round' => 4
             ]
         ],
-        [
-            'name' => null,
-            'jsonName' => 'total_records',
-            'function' => 'count',
-            'extra' => []
-        ],
-        [
-            'name' => 'status',
-            'jsonName' => 'distinct_records',
-            'function' => 'distinct',
+        'interval_cost' => [
+            'input_name' => 'cost',
+            'input_function' => 'sum',
+            'output_functions' => [
+                'sum',
+                'max',
+                'min'
+            ],
             'extra' => [
-                'counter' => true
+                'round' => 4
             ]
         ],
-    ],
+        'interval_records' => [
+            'input_name' => null,
+            'input_function' => 'count',
+            'output_functions' => [
+                'sum',
+                'max',
+                'min'
+            ]
+        ],
+        'interval_full_records' => [
+            'input_name' => 'is_full_record',
+            'input_function' => 'count',
+            'output_functions' => [
+                'sum'
+            ]
+        ]
+    ]
 
 ];
