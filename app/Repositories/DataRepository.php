@@ -191,7 +191,6 @@ class DataRepository extends DefaultRepository
             }
         }
 
-
         /* Get data */
         $results = $finalQuery->get();
 

@@ -91,7 +91,6 @@ trait OutputFunctions
                 case Data::AGGREGATE_EXTRA_ROUND:
                     $configValue = ($configValue > 0) ? $configValue : 0;
 
-                    dump(number_format(0, $configValue, ".", ""));
                     $columns[] = number_format(0, $configValue, ".", "");
 
                     return $columns;

@@ -39,7 +39,13 @@ class RedisRepository
     {
         /** @noinspection PhpUndefinedClassInspection */
         /** @noinspection PhpUndefinedMethodInspection */
-        return Redis::set($key, $value);
+        $response = Redis::set($key, $value);
+
+        /** @noinspection PhpUndefinedClassInspection */
+        /** @noinspection PhpUndefinedMethodInspection */
+        Redis::expire($key, config('database.redis.default.expiration'));
+
+        return $response;
     }
 
 

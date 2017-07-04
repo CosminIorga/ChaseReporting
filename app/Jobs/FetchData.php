@@ -10,12 +10,12 @@ namespace App\Jobs;
 
 
 use App\Definitions\Data;
-use App\Definitions\Functions;
 use App\Definitions\Logger;
-use App\Exceptions\FetchDataException;
 use App\Factories\ReportingTableFactory;
 use App\Models\ReportingTables\ReportingTable;
 use App\Repositories\DataRepository;
+use App\Repositories\RedisRepository;
+use App\Services\CachingService;
 use App\Services\ConfigGetter;
 use App\Traits\Common;
 use App\Traits\LogHelper;
@@ -48,10 +48,22 @@ class FetchData extends DefaultJob
     protected $configGetter;
 
     /**
+     * The Caching Service
+     * @var CachingService
+     */
+    protected $cachingService;
+
+    /**
      * The Data Repository
      * @var DataRepository
      */
     protected $dataRepository;
+
+    /**
+     * The Redis Repository
+     * @var RedisRepository
+     */
+    protected $redisRepository;
 
     /**
      * InsertData constructor.
@@ -70,115 +82,58 @@ class FetchData extends DefaultJob
     {
         $this->data = $data;
         $this->configGetter = ConfigGetter::Instance();
+        $this->cachingService = CachingService::Instance();
 
-        $this->validateInput();
         $this->setChannel(Logger::FETCH_DATA_CHANNEL);
-    }
-
-    /**
-     * Validate input data to contain minimum necessary information
-     */
-    protected function validateInput()
-    {
-        /* Check if array is empty */
-        if (empty($this->data)) {
-            throw new FetchDataException(FetchDataException::DATA_IS_EMPTY);
-        }
-
-        /* Check if array contains necessary keys */
-        $requiredKeys = [
-            Data::FETCH_INTERVAL_START,
-            Data::FETCH_INTERVAL_END,
-            Data::FETCH_COLUMNS,
-            Data::FETCH_GROUP_CLAUSE,
-            Data::FETCH_WHERE_CLAUSE,
-            Data::FETCH_ORDER_CLAUSE
-        ];
-
-        foreach ($requiredKeys as $requiredKey) {
-            if (!array_key_exists($requiredKey, $this->data)) {
-                throw new FetchDataException(
-                    sprintf(
-                        FetchDataException::MISSING_KEY,
-                        $requiredKey
-                    ),
-                    $this->data
-                );
-            }
-        }
-
-        $aggregates = $this->configGetter->aggregateData;
-        $aggregateNames = array_keys($aggregates);
-
-        foreach ($this->data[Data::FETCH_COLUMNS] as $column => $functions) {
-            /* Check if column is allowed */
-            if (!in_array($column, $aggregateNames)) {
-                throw new FetchDataException(
-                    sprintf(
-                        FetchDataException::INVALID_COLUMN_VALUE,
-                        $column
-                    ),
-                    $this->data
-                );
-            }
-
-            /* Check if function is allowed */
-            foreach (array_keys($functions) as $function) {
-                if (!in_array($function, Functions::ALLOWED_FUNCTIONS)) {
-                    throw new FetchDataException(
-                        sprintf(
-                            FetchDataException::INVALID_FUNCTION_VALUE,
-                            $function
-                        )
-                    );
-                }
-            }
-
-        }
-
-        /* Check if groupClause key contains only values from the pivot config array */
-        $pivots = $this->configGetter->pivotColumnsData;
-        $pivotNames = array_column($pivots, Data::CONFIG_COLUMN_NAME);
-
-        foreach ($this->data[Data::FETCH_GROUP_CLAUSE] as $pivot) {
-            if (!in_array($pivot, $pivotNames)) {
-                throw new FetchDataException(
-                    sprintf(
-                        FetchDataException::INVALID_PIVOT_VALUE,
-                        $pivot
-                    ),
-                    $this->data
-                );
-            }
-        }
     }
 
     /**
      * Job runner
      * @param DataRepository $dataRepository
+     * @param RedisRepository $redisRepository
      * @return array
      */
     public function handle(
-        DataRepository $dataRepository
-    ): array {
+        DataRepository $dataRepository,
+        RedisRepository $redisRepository
+    ): array
+    {
         $this->debug("Fetching data started ...");
 
         /* Start timer for performance benchmarks */
         $startTime = microtime(true);
 
         $this->dataRepository = $dataRepository;
+        $this->redisRepository = $redisRepository;
 
-        /* Compute necessary tables and interval columns */
-        $tablesAndColumns = $this->fetchTablesAndColumns();
+        /* Compute cache key */
+        $cacheKey = $this->cachingService->computeCacheKeyFromFetchData($this->data);
 
-        /* Transform received data, tables and columns into queryData */
-        $queryData = $this->transformData($tablesAndColumns);
+        /* Check if cache key exists */
+        $cachedData = $this->redisRepository->get($cacheKey);
 
-        /* Retrieve results using given queryData */
-        $results = $this->fetchData($queryData);
+        if (!is_null($cachedData)) {
+            $this->debug("Cache hit");
+            $processedResults = $this->cachingService->decodeCacheData($cachedData);
+        } else {
+            $this->debug("Cache miss");
+            /* Compute necessary tables and interval columns */
+            $tablesAndColumns = $this->fetchTablesAndColumns();
 
-        /* Process results */
-        $processedResults = $this->processResults($results);
+            /* Transform received data, tables and columns into queryData */
+            $queryData = $this->transformData($tablesAndColumns);
+
+            /* Retrieve results using given queryData */
+            $results = $this->fetchData($queryData);
+
+            /* Process results */
+            $processedResults = $this->processResults($results);
+
+            /* Cache the results */
+            $encodedData = $this->cachingService->encodeCacheData($processedResults);
+
+            $this->redisRepository->set($cacheKey, $encodedData);
+        }
 
         /* Order results */
         $orderedResults = $this->orderResults($processedResults);

@@ -95,7 +95,7 @@ class ConfigGetter
 
     /**
      * Instantiator for
-     * @return ConfigGetter|null
+     * @return ConfigGetter
      */
     public static function Instance()
     {
