@@ -21,4 +21,10 @@ return [
      * If 'daily' option is selected but interval is less than 60, it will trigger a MySQL error of too many columns
      */
     'table_interval' => 'daily',
+
+
+    /**
+     * Flag used to detect whether parallel processing for certain features is enabled such as data fetching
+     */
+    'gearman_parallel_processing' => true
 ];

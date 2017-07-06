@@ -2,8 +2,8 @@
 /**
  * Created by PhpStorm.
  * User: chase
- * Date: 28/04/17
- * Time: 18:28
+ * Date: 05/07/17
+ * Time: 13:44
  */
 
 namespace App\Repositories;
@@ -13,19 +13,18 @@ use App\Definitions\Columns;
 use App\Definitions\Data;
 use App\Models\ColumnModel;
 use App\Services\ConfigGetter;
-use DB;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
 
-class DataRepository extends DefaultRepository
-{
 
+abstract class DataRepository extends DefaultRepository
+{
     /**
      * The table name
      * @var string
      */
-    private $dataTable;
+    protected $dataTable;
 
     /**
      * Function used to set table for DataModel
@@ -40,7 +39,7 @@ class DataRepository extends DefaultRepository
      * Short function used to initialize the query builder
      * @return Builder
      */
-    protected function initQueryBuilder()
+    protected function initQueryBuilder(): Builder
     {
         return $this->getDataConnection()->table($this->dataTable);
     }
@@ -164,37 +163,5 @@ class DataRepository extends DefaultRepository
      * @param array $queryData
      * @return \Illuminate\Support\Collection
      */
-    public function fetchData(array $queryData): Collection
-    {
-        /** @var Builder $finalQuery */
-        $finalQuery = null;
-
-        foreach ($queryData as $data) {
-            $this->setTable($data[Data::FETCH_QUERY_DATA_TABLE]);
-
-            /* Add table to query */
-            $query = $this->initQueryBuilder();
-
-            /* Add select columns */
-            $query->select(DB::raw(implode(', ', $data[Data::FETCH_QUERY_DATA_COLUMNS])));
-
-            /* Add where clause */
-            $query->where($data[Data::FETCH_QUERY_DATA_WHERE_CLAUSE]);
-
-            /* Add group clause */
-            $query->groupBy($data[Data::FETCH_QUERY_DATA_GROUP_CLAUSE]);
-
-            if (is_null($finalQuery)) {
-                $finalQuery = $query;
-            } else {
-                $finalQuery->union($query);
-            }
-        }
-
-        /* Get data */
-        $results = $finalQuery->get();
-
-        return $results;
-    }
-
+    abstract public function fetchData(array $queryData): Collection;
 }

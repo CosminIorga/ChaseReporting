@@ -49,5 +49,15 @@ return [
         'mediums' => [
             'registerToFileSystem' => true,
         ]
+    ],
+
+    /**
+     * Channel used to log information regarding the gearman workers, client and associated processes
+     */
+    'gearman' => [
+        'min_level' => 'debug',
+        'mediums' => [
+            'registerToFileSystem' => true
+        ]
     ]
 ];

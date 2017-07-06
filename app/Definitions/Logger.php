@@ -49,5 +49,6 @@ class Logger
     const CREATE_TABLE_CHANNEL = 'creation';
     const INSERT_DATA_CHANNEL = 'insertion';
     const FETCH_DATA_CHANNEL = 'fetching';
+    const GEARMAN_CHANNEL = 'gearman';
 
 }

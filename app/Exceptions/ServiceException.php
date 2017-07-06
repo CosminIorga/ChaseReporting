@@ -15,6 +15,8 @@ class ServiceException extends DefaultException
 
     const SERVICE_GETTER_INVALID_FUNCTION = 'Computer not defined for variable %s';
 
+    const INVALID_GEARMAN_CALLBACK_FUNCTION_NAME = 'Invalid gearman callback function name';
+
     public function report()
     {
         \ChannelLog::error('default_channel', $this->getMessage(), $this->getContext());

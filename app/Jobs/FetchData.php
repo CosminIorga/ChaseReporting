@@ -98,6 +98,8 @@ class FetchData extends DefaultJob
         RedisRepository $redisRepository
     ): array
     {
+        dd($this->data);
+
         $this->debug("Fetching data started ...");
 
         /* Start timer for performance benchmarks */
@@ -112,7 +114,7 @@ class FetchData extends DefaultJob
         /* Check if cache key exists */
         $cachedData = $this->redisRepository->get($cacheKey);
 
-        if (!is_null($cachedData)) {
+        if (!is_null($cachedData) && false) {
             $this->debug("Cache hit");
             $processedResults = $this->cachingService->decodeCacheData($cachedData);
         } else {
@@ -238,9 +240,13 @@ class FetchData extends DefaultJob
      */
     protected function processResults(Collection $queryResults): array
     {
+        dump($queryResults);
+
         $endData = [];
 
         foreach ($queryResults->toArray() as $result) {
+            //TODO: post-aggregate the values
+
             $endData[] = (array) $result;
         }
 

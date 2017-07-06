@@ -10,6 +10,7 @@ namespace App\Repositories;
 
 use App\Traits\Common;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Schema\MySqlBuilder;
 
 abstract class DefaultRepository
@@ -53,4 +54,11 @@ abstract class DefaultRepository
     {
         return \DB::connection('data_connection');
     }
+
+
+    /**
+     * Function used to initialize the query builder
+     * @return Builder
+     */
+    abstract protected function initQueryBuilder(): Builder;
 }
