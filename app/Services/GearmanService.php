@@ -54,12 +54,7 @@ class GearmanService
         $this->gearmanServer->addServer();
 
         $this->gearmanServer->setCompleteCallback(function (\GearmanTask $task) {
-            echo "Finished one payload " . PHP_EOL;
-
-            $this->response = array_merge(
-                GearmanServiceHelper::decodeWorkload($task->data()),
-                $this->response
-            );
+            $this->response[] = GearmanServiceHelper::decodeWorkload($task->data());
         });
     }
 
@@ -78,6 +73,7 @@ class GearmanService
      */
     public function runTasks()
     {
+        $this->debug("Starting node execution");
         $this->gearmanServer->runTasks();
     }
 
@@ -89,7 +85,6 @@ class GearmanService
     {
         return $this->response;
     }
-
 
 
 }

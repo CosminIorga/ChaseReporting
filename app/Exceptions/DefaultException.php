@@ -10,7 +10,6 @@ namespace App\Exceptions;
 
 
 use App\Interfaces\DefaultException as DefaultExceptionTrait;
-use Exception;
 
 /**
  * Class DefaultException

@@ -466,4 +466,31 @@ class ConfigGetter
         ]);
     }
 
+    /**
+     * Function used to retrieve pivot column config based on given pivot column name
+     * @param string $pivotName
+     * @return array
+     * @throws ConfigException
+     */
+    public function getPivotConfigByName(string $pivotName): array
+    {
+        if (is_null($this->_pivotColumnsData)) {
+            $this->_pivotColumnsData = $this->computeValue('pivotColumnsData');
+        }
+
+        foreach ($this->_pivotColumnsData as $pivotColumnsDatum) {
+            if ($pivotColumnsDatum[Data::CONFIG_COLUMN_NAME] == $pivotName) {
+                return $pivotColumnsDatum;
+            }
+        }
+
+        throw new ConfigException(
+            sprintf(
+                ConfigException::UNKNOWN_PIVOT_COLUMN_NAME,
+                $pivotName
+            )
+        );
+    }
+
+
 }

@@ -53,12 +53,12 @@ class FetchDataModel
     public function select()
     {
         $this->fetchData = [
-            Data::FETCH_INTERVAL_START => null,
-            Data::FETCH_INTERVAL_END => null,
-            Data::FETCH_COLUMNS => [],
-            Data::FETCH_GROUP_CLAUSE => null,
-            Data::FETCH_WHERE_CLAUSE => null,
-            Data::FETCH_ORDER_CLAUSE => null
+            Data::INTERVAL_START => null,
+            Data::INTERVAL_END => null,
+            Data::COLUMNS => [],
+            Data::GROUP_CLAUSE => null,
+            Data::WHERE_CLAUSE => null,
+            Data::ORDER_CLAUSE => null
         ];
 
         return $this;
@@ -67,17 +67,21 @@ class FetchDataModel
     /**
      * Function used to set a fetch column
      * @param string $column
+     * @param string $columnAlias
      * @param string $function
      * @param array $extraParams
      * @return FetchDataModel
      */
-    public function column(string $column, string $function, array $extraParams = []): self
+    public function column(string $column, string $columnAlias, string $function, array $extraParams = []): self
     {
         $this->validateColumnName($column)
             ->validateColumnFunction($function);
 
-        $this->fetchData[Data::FETCH_COLUMNS][$column] = [
-            $function => $extraParams
+        $this->fetchData[Data::COLUMNS][$columnAlias] = [
+            Data::COLUMN_NAME => $column,
+            Data::FUNCTION_NAME => $function,
+            Data::FUNCTION_PARAMS => $extraParams,
+            Data::COLUMN_ALIAS => $columnAlias,
         ];
 
         return $this;
@@ -90,7 +94,7 @@ class FetchDataModel
      */
     public function fromInterval(string $startDate): self
     {
-        $this->fetchData[Data::FETCH_INTERVAL_START] = $startDate;
+        $this->fetchData[Data::INTERVAL_START] = $startDate;
 
         $this->validateIntervalDate($startDate);
 
@@ -104,13 +108,12 @@ class FetchDataModel
      */
     public function toInterval(string $endDate): self
     {
-        $this->fetchData[Data::FETCH_INTERVAL_END] = $endDate;
+        $this->fetchData[Data::INTERVAL_END] = $endDate;
 
         $this->validateIntervalDate($endDate);
 
         return $this;
     }
-
 
     /**
      * Function used to set a where clause
@@ -119,7 +122,7 @@ class FetchDataModel
      */
     public function where(array $whereClause): self
     {
-        $this->fetchData[Data::FETCH_WHERE_CLAUSE] = $whereClause;
+        $this->fetchData[Data::WHERE_CLAUSE] = $whereClause;
 
         return $this;
     }
@@ -131,7 +134,7 @@ class FetchDataModel
      */
     public function groupBy(array $groupByClause): self
     {
-        $this->fetchData[Data::FETCH_GROUP_CLAUSE] = $groupByClause;
+        $this->fetchData[Data::GROUP_CLAUSE] = $groupByClause;
 
         $this->validateGroupClause($groupByClause);
 
@@ -145,7 +148,7 @@ class FetchDataModel
      */
     public function orderBy(array $orderByClause): self
     {
-        $this->fetchData[Data::FETCH_ORDER_CLAUSE] = $orderByClause;
+        $this->fetchData[Data::ORDER_CLAUSE] = $orderByClause;
 
         $this->validateOrderByClause($orderByClause);
 
@@ -177,13 +180,13 @@ class FetchDataModel
     {
         /* Not-null keys */
         $notNull = [
-            Data::FETCH_INTERVAL_START,
-            Data::FETCH_INTERVAL_END,
-            Data::FETCH_GROUP_CLAUSE
+            Data::INTERVAL_START,
+            Data::INTERVAL_END,
+            Data::GROUP_CLAUSE
         ];
 
         $notEmpty = [
-            Data::FETCH_COLUMNS,
+            Data::COLUMNS,
         ];
 
         foreach ($notNull as $column) {
@@ -267,8 +270,8 @@ class FetchDataModel
             new Carbon($date);
 
             /* Check if end date is lower than start date if both defined */
-            $startDate = $this->fetchData[Data::FETCH_INTERVAL_START] ?? null;
-            $endDate = $this->fetchData[Data::FETCH_INTERVAL_END] ?? null;
+            $startDate = $this->fetchData[Data::INTERVAL_START] ?? null;
+            $endDate = $this->fetchData[Data::INTERVAL_END] ?? null;
 
             /* Do not validate both dates if one is not defined */
             if (is_null($startDate) || is_null($endDate)) {
@@ -280,8 +283,8 @@ class FetchDataModel
                 throw new FetchDataException(
                     FetchDataException::END_DATE_LOWER_THAN_START_DATE,
                     [
-                        Data::FETCH_INTERVAL_START => $startDate,
-                        Data::FETCH_INTERVAL_END => $endDate
+                        Data::INTERVAL_START => $startDate,
+                        Data::INTERVAL_END => $endDate
                     ]
                 );
             }
@@ -323,7 +326,6 @@ class FetchDataModel
 
         return $this;
     }
-
 
     /**
      * Function used to validate the order by clause

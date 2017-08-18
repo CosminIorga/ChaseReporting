@@ -12,25 +12,24 @@ class StartWorkers extends Command
      *
      * @var string
      */
-    protected $signature = 'gearman:worker';
+    protected $signature = 'gearman:workers:start {workerCount=10}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Start X gearman workers';
 
-
+    /**
+     * Command runner
+     */
     public function handle()
     {
-        $this->testGearmanWorker();
-    }
+        $workerCount = $this->argument('workerCount');
 
-    protected function testGearmanWorker()
-    {
         $gearmanService = new GearmanWorkerService();
 
-        $gearmanService->createAndDispatchWorkers('fetch_task');
+        $gearmanService->createAndDispatchWorkers('fetch_task', $workerCount);
     }
 }

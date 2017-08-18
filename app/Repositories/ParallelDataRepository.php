@@ -9,7 +9,9 @@
 namespace App\Repositories;
 
 
+use App\Definitions\Data;
 use App\Definitions\Gearman;
+use App\Exceptions\FetchDataException;
 use App\Helpers\GearmanServiceHelper;
 use App\Services\GearmanService;
 use Illuminate\Support\Collection;
@@ -21,7 +23,6 @@ class ParallelDataRepository extends DataRepository
      * @var GearmanService
      */
     protected $gearmanService;
-
 
     /**
      * ParallelDataRepository constructor.
@@ -43,21 +44,52 @@ class ParallelDataRepository extends DataRepository
     }
 
     /**
-     * Function used to fetch data in parallel based on given queries
+     * Function used to execute the fetch operations and retrieve data or insert it into a temporary table
      * @param array $queryData
-     * @return \Illuminate\Support\Collection
+     * @return Collection
+     * @throws FetchDataException
      */
-    public function fetchData(array $queryData): Collection
+    public function executeFetchOperations(array $queryData): Collection
     {
-        foreach ($queryData as $queryDataRecord) {
+        /* Fetch_Mode is always set to INSERT for parallel fetching */
+        $fetchData = $queryData[Data::OPERATION_FETCH_REPORTING_DATA][Data::FETCH_DATA];
+
+        /* Check if fetchData contains only one table. Call serialRepository if so */
+        if (count($fetchData) == 1) {
+            /* Set flag in order to know to return the fetch results */
+            $this->shouldReturnFetchResults = true;
+
+            return (new SerialDataRepository())->fetchData($queryData);
+        }
+
+        /* Otherwise prepare data for parallel fetching */
+        foreach ($fetchData as $queryDataRecord) {
+            $payload = [
+                Data::TEMPORARY_TABLE_NAME => $queryData[Data::OPERATION_CREATE_TABLE][Data::TEMPORARY_TABLE_NAME],
+                Data::QUERY_DATA => $queryDataRecord
+            ];
+
             $this->gearmanService->addTask(
                 Gearman::FETCH_TASK,
-                GearmanServiceHelper::encodeWorkload($queryDataRecord)
+                GearmanServiceHelper::encodeWorkload($payload)
             );
         }
 
         $this->gearmanService->runTasks();
 
-        return collect($this->gearmanService->retrieveResponse());
+        $response = $this->gearmanService->retrieveResponse();
+
+        /* Iterate through responses and check if all went well */
+        foreach ($response as $nodeStatus) {
+            if ($nodeStatus[Data::INSERTION_STATUS] == false) {
+                throw new FetchDataException(FetchDataException::NODE_FAILED_TO_INSERT_DATA_IN_TEMP_TABLE);
+            }
+        }
+
+        /* Otherwise return empty collection as data will be fetched from temporary table */
+        return collect();
     }
+
+
+
 }

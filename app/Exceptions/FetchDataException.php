@@ -28,6 +28,9 @@ class FetchDataException extends DefaultException
     const COLUMN_MUST_NOT_BE_NULL = "Column %s must not be null";
     const COLUMN_MUST_NOT_BE_EMPTY = "Column %s must not be empty";
 
+    const FAILED_INSERTING_DATA_IN_TEMP_TABLE = 'Failed inserting data into temporary table';
+    const NODE_FAILED_TO_INSERT_DATA_IN_TEMP_TABLE = 'One of the nodes failed to insert data into temporary table';
+
     public function report()
     {
         \ChannelLog::error(Logger::FETCH_DATA_CHANNEL, $this->getMessage(), $this->getContext());

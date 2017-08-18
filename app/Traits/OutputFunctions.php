@@ -18,82 +18,102 @@ trait OutputFunctions
 
     /**
      * Function used to map intervals to an SQL function
+     * @param array $columnInformation
      * @param array $intervals
-     * @param string $function
-     * @param array $functionExtra
-     * @param array $aggregateConfig
-     * @return string
+     * @param bool $flagParseQueryExtra
+     * @return array
      */
     protected function mapIntervalsToQueryFunctions(
+        array $columnInformation,
         array $intervals,
-        string $function,
-        array $functionExtra,
-        array $aggregateConfig
-    ): string {
-        $aggregatesMapping = Functions::FUNCTIONS_MAPPING[$function];
+        bool $flagParseQueryExtra = false
+    ): array {
+        $columnName = $columnInformation[Data::COLUMN_NAME];
+        $functionName = $columnInformation[Data::FUNCTION_NAME];
+        $functionExtra = $columnInformation[Data::FUNCTION_PARAMS];
 
-        $columns = $this->extractColumn($aggregateConfig, $intervals, $aggregatesMapping);
+        $functionInformation = Functions::FUNCTIONS_MAPPING[$functionName];
 
-        $columns = $this->parseQueryExtra($columns, $aggregateConfig, $functionExtra);
+        $columns = $this->extractColumn($columnName, $intervals, $functionInformation);
 
         /* Stringify columns */
         $columnsStringed = implode(
-            $aggregatesMapping[Functions::STRINGIFY_OPERATOR],
+            $functionInformation[Functions::STRINGIFY_OPERATOR],
             $columns
         );
 
-        return sprintf(
-            $aggregatesMapping[Functions::GROUP_AGGREGATOR],
-            $columnsStringed,
-            $this->computeColumnAlias($aggregateConfig, $function)
+        /* Apply, if defined, the multiple_columns_aggregator if there are more than one columns */
+        if (
+            count($columns) > 1 &&
+            array_key_exists(Functions::MULTIPLE_COLUMNS_AGGREGATOR, $functionInformation)
+        ) {
+            $columnsStringed = sprintf(
+                $functionInformation[Functions::MULTIPLE_COLUMNS_AGGREGATOR],
+                $columnsStringed
+            );
+        }
+
+        /* Add group operator */
+        $columnsStringed = sprintf(
+            $functionInformation[Functions::GROUP_AGGREGATOR],
+            $columnsStringed
         );
+
+        /* Parse extra for column */
+        if ($flagParseQueryExtra) {
+            $columnsStringed = $this->parseQueryExtra($columnsStringed, $functionExtra);
+        }
+
+        /* Return column alias and computed query function */
+        return [
+            $columnInformation[Data::COLUMN_ALIAS],
+            $columnsStringed
+        ];
     }
 
     /**
      * Small function used to compute the SQL extraction operation from a JSON
-     * @param array $aggregateConfig
+     * @param string $columnName
      * @param array $intervals
-     * @param array $aggregatesMapping
+     * @param array $functionInformation
      * @return array
      */
-    protected function extractColumn(array $aggregateConfig, array $intervals, array $aggregatesMapping)
+    protected function extractColumn(string $columnName, array $intervals, array $functionInformation)
     {
-        $jsonKey = $aggregateConfig[Data::AGGREGATE_JSON_NAME];
-
-        $columns = array_map(function (string $interval) use ($jsonKey, $aggregatesMapping) {
+        return array_map(function (string $interval) use (
+            $columnName,
+            $functionInformation
+        ) {
             return sprintf(
-                $aggregatesMapping[Functions::ESCAPE_OPERATOR],
+                $functionInformation[Functions::ESCAPE_OPERATOR],
                 sprintf(
                     Functions::EXTRACT_OPERATOR,
                     $interval,
-                    $jsonKey
+                    $columnName
                 )
             );
         }, $intervals);
-
-        return $columns;
     }
 
     /**
      * Function used to
-     * @param array $columns
-     * @param array $aggregateConfig
+     * @param string $column
      * @param array $functionExtra
-     * @return array
+     * @return string
      * @throws ConfigException
      */
-    protected function parseQueryExtra(array $columns, array $aggregateConfig, array $functionExtra): array
+    protected function parseQueryExtra(string $column, array $functionExtra): string
     {
-        $extraConfig = $functionExtra ?? $aggregateConfig[Data::AGGREGATE_EXTRA] ?? [];
+        $extraConfig = $functionExtra ?? [];
 
         foreach ($extraConfig as $configKey => $configValue) {
             switch ($configKey) {
                 case Data::AGGREGATE_EXTRA_ROUND:
-                    $configValue = ($configValue > 0) ? $configValue : 0;
-
-                    $columns[] = number_format(0, $configValue, ".", "");
-
-                    return $columns;
+                    return sprintf(
+                        Functions::ROUND_FUNCTION,
+                        $column,
+                        $configValue
+                    );
                 default:
                     throw new ConfigException(
                         sprintf(
@@ -104,22 +124,6 @@ trait OutputFunctions
             }
         }
 
-        return $columns;
+        return $column;
     }
-
-    /**
-     * Short function used to return the column alias
-     * @param array $aggregateConfig
-     * @param string $function
-     * @return string
-     */
-    protected function computeColumnAlias(array $aggregateConfig, string $function)
-    {
-        return sprintf(
-            Data::DATA_COLUMN_ALIAS,
-            $function,
-            $aggregateConfig[Data::AGGREGATE_JSON_NAME]
-        );
-    }
-
 }

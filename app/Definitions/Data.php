@@ -50,26 +50,44 @@ class Data
     /**
      * Fetch column definitions
      */
-    const FETCH_INTERVAL_START = 'intervalStart';
-    const FETCH_INTERVAL_END = 'intervalEnd';
-    const FETCH_COLUMNS = 'columns';
-    const FETCH_GROUP_CLAUSE = 'groupClause';
-    const FETCH_WHERE_CLAUSE = 'whereClause';
-    const FETCH_ORDER_CLAUSE = 'orderClause';
+    const INTERVAL_START = 'interval_start';
+    const INTERVAL_END = 'interval_end';
+    const COLUMNS = 'columns';
+    const COLUMN_NAME = 'column_name';
+    const COLUMN_ALIAS = 'column_alias';
+    const FUNCTION_NAME = 'function_name';
+    const FUNCTION_PARAMS = 'function_params';
+    const GROUP_CLAUSE = 'group_clause';
+    const WHERE_CLAUSE = 'where_clause';
+    const ORDER_CLAUSE = 'order_clause';
 
     /**
      * Fetch query data definitions
      */
-    const FETCH_QUERY_DATA_TABLE = 'table';
-    const FETCH_QUERY_DATA_COLUMNS = 'columns';
-    const FETCH_QUERY_DATA_WHERE_CLAUSE = 'where';
-    const FETCH_QUERY_DATA_GROUP_CLAUSE = 'group';
+    const OPERATION_CREATE_TABLE = 'operation_create_table';
+    const OPERATION_FETCH_REPORTING_DATA = 'operation_fetch_reporting_data';
+    const OPERATION_FETCH_TEMPORARY_DATA = 'operation_fetch_temporary_data';
+    const OPERATION_DROP_TABLE = 'operation_drop_table';
+
+    const TEMPORARY_TABLE_NAME = 'temporary_table_name';
+    const TEMPORARY_TABLE_NAME_TEMPLATE = 'aggregateDataTemp_';
+    const TEMPORARY_TABLE_COLUMN_DEFINITIONS = 'temporary_table_column_definitions';
+    const TEMPORARY_TABLE_AGGREGATE_COLUMN_NAME = 'aggregate_column';
+
+    const FETCH_DATA = 'fetch_data';
+    const FETCH_DATA_TABLE = 'fetch_data_table';
+    const FETCH_DATA_COLUMNS = 'fetch_data_columns';
+    const FETCH_DATA_WHERE_CLAUSE = 'fetch_data_where_clause';
+    const FETCH_DATA_GROUP_CLAUSE = 'fetch_data_group_clause';
+    const FETCH_DATA_MODE = 'fetch_data_mode';
+
+    const FETCH_DATA_MODE_INSERT = 'fetch_data_mode_insert';
+    const FETCH_DATA_MODE_SELECT = 'fetch_data_mode_select';
 
     /**
-     * Fetch query-specific information
+     * Parallel query information
      */
-    const DATA_COLUMN_ALIAS = '%1$s_%2$s';
-    const HASH_COLUMN_ALIAS = 'hashColumn';
-
-
+    const QUERY_DATA = 'query_data';
+    const INSERTION_STATUS = 'insertion_status';
+    const ERROR_MESSAGE = 'error_message';
 }

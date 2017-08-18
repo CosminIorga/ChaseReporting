@@ -44,33 +44,25 @@ class CachingService
     {
         /* Take only necessary keys for caching */
         $reducedData = array_intersect_key($fetchData, array_flip([
-            Data::FETCH_INTERVAL_START,
-            Data::FETCH_INTERVAL_END,
-            Data::FETCH_COLUMNS,
-            Data::FETCH_GROUP_CLAUSE,
-            Data::FETCH_WHERE_CLAUSE
+            Data::INTERVAL_START,
+            Data::INTERVAL_END,
+            Data::COLUMNS,
+            Data::GROUP_CLAUSE,
+            Data::WHERE_CLAUSE
         ]));
 
         /* Order data in order to maintain consistency across requests with parameters in different order */
 
-        /* Order columns by key */
-        ksort($reducedData[Data::FETCH_COLUMNS]);
-
-        /* Order column functions by name */
-        foreach ($reducedData[Data::FETCH_COLUMNS] as &$columnInfo) {
-            ksort($columnInfo);
-
-            /* Order column extra clause */
-            foreach ($columnInfo as &$extraConfig) {
-                ksort($extraConfig);
-            }
-        }
+        /* Order columns by column_alias */
+        usort($reducedData[Data::COLUMNS], function (array $column1, array $column2) {
+            return strcmp($column1[Data::COLUMN_ALIAS], $column2[Data::COLUMN_ALIAS]);
+        });
 
         /* Order groupBy clause */
-        sort($reducedData[Data::FETCH_GROUP_CLAUSE]);
+        sort($reducedData[Data::GROUP_CLAUSE]);
 
         /* Order where clause */
-        usort($reducedData[Data::FETCH_WHERE_CLAUSE], function (array $whereCondition1, array $whereCondition2) {
+        usort($reducedData[Data::WHERE_CLAUSE], function (array $whereCondition1, array $whereCondition2) {
             return serialize($whereCondition1) < serialize($whereCondition2);
         });
 

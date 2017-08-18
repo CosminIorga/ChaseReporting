@@ -24,7 +24,6 @@ use App\Transformers\TransformFetchData;
 use Carbon\Carbon;
 use DateInterval;
 use DatePeriod;
-use Illuminate\Support\Collection;
 
 class FetchData extends DefaultJob
 {
@@ -96,10 +95,7 @@ class FetchData extends DefaultJob
     public function handle(
         DataRepository $dataRepository,
         RedisRepository $redisRepository
-    ): array
-    {
-        dd($this->data);
-
+    ): array {
         $this->debug("Fetching data started ...");
 
         /* Start timer for performance benchmarks */
@@ -114,31 +110,25 @@ class FetchData extends DefaultJob
         /* Check if cache key exists */
         $cachedData = $this->redisRepository->get($cacheKey);
 
-        if (!is_null($cachedData) && false) {
+        if (!is_null($cachedData) && !env('APP_NO_CACHE')) {
             $this->debug("Cache hit");
-            $processedResults = $this->cachingService->decodeCacheData($cachedData);
+            $results = $this->cachingService->decodeCacheData($cachedData);
         } else {
             $this->debug("Cache miss");
             /* Compute necessary tables and interval columns */
-            $tablesAndColumns = $this->fetchTablesAndColumns();
+            $tablesAndIntervals = $this->fetchTablesAndIntervals();
 
             /* Transform received data, tables and columns into queryData */
-            $queryData = $this->transformData($tablesAndColumns);
+            $queryData = $this->transformData($tablesAndIntervals);
 
             /* Retrieve results using given queryData */
             $results = $this->fetchData($queryData);
 
-            /* Process results */
-            $processedResults = $this->processResults($results);
-
             /* Cache the results */
-            $encodedData = $this->cachingService->encodeCacheData($processedResults);
+            $encodedData = $this->cachingService->encodeCacheData($results);
 
             $this->redisRepository->set($cacheKey, $encodedData);
         }
-
-        /* Order results */
-        $orderedResults = $this->orderResults($processedResults);
 
         /* Compute total operations time */
         $endTime = microtime(true);
@@ -146,20 +136,20 @@ class FetchData extends DefaultJob
 
         $this->debug("Fetch operation time: $elapsed seconds");
 
-        return $orderedResults;
+        return $results;
     }
 
     /**
-     * Function used to retrieve a list of tables and associated columns from which to fetch the data
+     * Function used to retrieve a list of tables and associated intervals from which to fetch the data
      */
-    protected function fetchTablesAndColumns()
+    protected function fetchTablesAndIntervals()
     {
         /* Get data interval from config */
         $dataInterval = $this->configGetter->dataInterval;
 
         /* Compute necessary information to retrieve periods between startDate and endDate with a step of dataInterval */
-        $startDate = new Carbon($this->data[Data::FETCH_INTERVAL_START]);
-        $endDate = new Carbon($this->data[Data::FETCH_INTERVAL_END]);
+        $startDate = new Carbon($this->data[Data::INTERVAL_START]);
+        $endDate = new Carbon($this->data[Data::INTERVAL_END]);
         $dateInterval = new DateInterval("PT{$dataInterval}M");
 
         /* Compute periods */
@@ -168,7 +158,7 @@ class FetchData extends DefaultJob
         /* Compute reporting table model */
         $reportingTableModel = $this->getReportingTableModel($startDate);
 
-        $tablesAndColumns = [];
+        $tablesAndIntervals = [];
 
         foreach ($periods as $referenceDate) {
             $reportingTableModel->setReferenceDate($referenceDate);
@@ -176,10 +166,10 @@ class FetchData extends DefaultJob
 
             $intervalColumn = $reportingTableModel->getIntervalColumnByReferenceData($referenceDate);
 
-            $tablesAndColumns[$tableName][] = $intervalColumn;
+            $tablesAndIntervals[$tableName][] = $intervalColumn;
         }
 
-        return $tablesAndColumns;
+        return $tablesAndIntervals;
     }
 
     /**
@@ -203,12 +193,12 @@ class FetchData extends DefaultJob
 
     /**
      * Function used to transform data
-     * @param array $tablesAndColumns
+     * @param array $tablesAndIntervals
      * @return array
      */
-    protected function transformData(array $tablesAndColumns): array
+    protected function transformData(array $tablesAndIntervals): array
     {
-        $queryData = (new TransformFetchData())->toReportingData($this->data, $tablesAndColumns);
+        $queryData = (new TransformFetchData())->toReportingData($this->data, $tablesAndIntervals);
 
         return $queryData;
     }
@@ -216,9 +206,9 @@ class FetchData extends DefaultJob
     /**
      * Function used to fetch data
      * @param array $queryData
-     * @return Collection
+     * @return array
      */
-    protected function fetchData(array $queryData): Collection
+    protected function fetchData(array $queryData): array
     {
         /* Start timer for performance benchmarks */
         $startTime = microtime(true);
@@ -230,64 +220,7 @@ class FetchData extends DefaultJob
         $elapsed = $endTime - $startTime;
 
         $this->debug("Fetched data in $elapsed seconds");
-        return $results;
-    }
 
-    /**
-     * Function used to process database results and further aggregate the data
-     * @param Collection $queryResults
-     * @return array
-     */
-    protected function processResults(Collection $queryResults): array
-    {
-        dump($queryResults);
-
-        $endData = [];
-
-        foreach ($queryResults->toArray() as $result) {
-            //TODO: post-aggregate the values
-
-            $endData[] = (array) $result;
-        }
-
-        return $endData;
-    }
-
-    /**
-     * Function used to order to processed results
-     * @param array $processedResults
-     * @return array
-     */
-    protected function orderResults(array $processedResults): array
-    {
-        $order = $this->data[Data::FETCH_ORDER_CLAUSE];
-
-        /* Flatten arrays before ordering */
-        $processedResults = array_map(function ($record) {
-            return $this->flattenArray($record);
-        }, $processedResults);
-
-        /* Order arrays */
-        usort($processedResults, function (array $record1, array $record2) use ($order) {
-            foreach ($order as $orderClause) {
-                $orderKey = $orderClause[0];
-                $orderDir = $orderClause[1];
-
-                if ($record1[$orderKey] == $record2[$orderKey]) {
-                    continue;
-                }
-
-                if ($orderDir == 'ASC') {
-                    return $record1[$orderKey] > $record2[$orderKey];
-                }
-
-                return $record1[$orderKey] < $record2[$orderKey];
-            }
-
-            return 0;
-        });
-
-
-        return $processedResults;
+        return $results->toArray();
     }
 }

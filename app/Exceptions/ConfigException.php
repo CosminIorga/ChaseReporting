@@ -20,6 +20,7 @@ class ConfigException extends DefaultException
     const INVALID_CONFIG_INDEX = 'Invalid config index. Given: %s';
     const AGGREGATE_DATA_INCOMPLETE = 'Aggregate data is incomplete. Missing key: %s';
     const UNKNOWN_AGGREGATE_JSON_NAME = 'Unknown aggregate json name. Given: %s';
+    const UNKNOWN_PIVOT_COLUMN_NAME = 'Unknown column pivot name. Given %s';
 
     const INCOMPLETE_FETCH_DATA = 'Incomplete fetch data. Missing: %s';
     const INCOMPLETE_FETCH_RECORD = 'Incomplete fetch record. Missing: %s';

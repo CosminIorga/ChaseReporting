@@ -73,27 +73,49 @@ class GearmanServiceHelper
     public function fetchDataUsingGearmanNode(\GearmanJob $job): string
     {
         try {
+            /* Start timer for performance benchmarks */
+            $startTime = microtime(true);
+
             $data = self::decodeWorkload($job->workload());
+
+            $queryData = $data[Data::QUERY_DATA];
+            $temporaryTable = $data[Data::TEMPORARY_TABLE_NAME];
 
             /* Init query */
             $query = \DB::connection('data_connection')
-                ->table($data[Data::FETCH_QUERY_DATA_TABLE])
+                ->table($queryData[Data::FETCH_DATA_TABLE])
                 /* Add select columns */
-                ->select(\DB::raw(implode(', ', $data[Data::FETCH_QUERY_DATA_COLUMNS])))
+                ->select(\DB::raw(implode(', ', $queryData[Data::FETCH_DATA_COLUMNS])))
                 /* Add where clause */
-                ->where($data[Data::FETCH_QUERY_DATA_WHERE_CLAUSE])
+                ->where($queryData[Data::FETCH_DATA_WHERE_CLAUSE])
                 /* Add group clause */
-                ->groupBy($data[Data::FETCH_QUERY_DATA_GROUP_CLAUSE]);
+                ->groupBy($queryData[Data::FETCH_DATA_GROUP_CLAUSE]);
 
-            /* Fetch data */
-            $results = $query->get();
+            /* Get the bindings */
+            $bindings = $query->getBindings();
 
-            return self::encodeWorkload($results->toArray());
+            /* Create raw insert statement */
+            $insertQuery = "INSERT INTO {$temporaryTable} {$query->toSql()}";
+
+            /* Insert data */
+            $insertSuccess = \DB::insert($insertQuery, $bindings);
+
+            /* Compute total operations time */
+            $endTime = microtime(true);
+            $elapsed = $endTime - $startTime;
+
+            $this->debug("Finished one operation in $elapsed seconds");
+            /* Return status of whether insertion occurred successfully or not */
+            return self::encodeWorkload([
+                Data::INSERTION_STATUS => (bool) $insertSuccess,
+            ]);
         } catch (\Exception $exception) {
             $this->error($exception->getMessage());
             $job->sendException($exception);
 
-            return null;
+            return self::encodeWorkload([
+                Data::INSERTION_STATUS => false
+            ]);
         }
     }
 }
