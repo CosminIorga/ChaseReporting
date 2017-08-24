@@ -9,8 +9,6 @@
 namespace App\Services;
 
 
-
-
 use App\Definitions\Gearman;
 use App\Helpers\GearmanServiceHelper;
 use App\Traits\LogHelper;
@@ -68,7 +66,7 @@ class GearmanWorkerService
                 $workerTask,
                 [
                     new GearmanServiceHelper(),
-                    Gearman::GEARMAN_FUNCTION_MAPPING[$workerTask]
+                    Gearman::GEARMAN_FUNCTION_MAPPING[$workerTask],
                 ]
             );
 
@@ -94,7 +92,7 @@ class GearmanWorkerService
             /* Only for child process */
             if ($pid == 0) {
                 while ($worker->work()) {
-                    ;
+                    true;
                 }
 
                 exit($workerId);

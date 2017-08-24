@@ -230,10 +230,12 @@ class NonPersistentModel implements Arrayable, Jsonable
             if (is_object($value)) {
                 if (method_exists($value, 'toArray') || $value instanceof Arrayable) {
                     $array[$attribute] = $value->toArray();
+
                     return;
                 }
 
-                $array[$attribute] = (array)$value;
+                $array[$attribute] = (array) $value;
+
                 return;
             }
 

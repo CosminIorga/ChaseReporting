@@ -9,7 +9,6 @@
 namespace App\Exceptions;
 
 
-
 use App\Interfaces\DefaultValidator;
 
 class ValidatorException extends DefaultException

@@ -46,9 +46,9 @@ class Logger
      * Available channels
      */
     const DEFAULT_CHANNEL = 'default_channel';
-    const CREATE_TABLE_CHANNEL = 'creation';
-    const INSERT_DATA_CHANNEL = 'insertion';
-    const FETCH_DATA_CHANNEL = 'fetching';
+    const CREATE_TABLE_CHANNEL = 'create_reporting_table';
+    const MODIFY_DATA_CHANNEL = 'alter_data';
+    const FETCH_DATA_CHANNEL = 'fetch_data';
     const GEARMAN_CHANNEL = 'gearman';
 
 }

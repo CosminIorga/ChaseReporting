@@ -105,7 +105,9 @@ class GearmanServiceHelper
             $elapsed = $endTime - $startTime;
 
             $this->debug("Finished one operation in $elapsed seconds");
+
             /* Return status of whether insertion occurred successfully or not */
+
             return self::encodeWorkload([
                 Data::INSERTION_STATUS => (bool) $insertSuccess,
             ]);
@@ -114,7 +116,7 @@ class GearmanServiceHelper
             $job->sendException($exception);
 
             return self::encodeWorkload([
-                Data::INSERTION_STATUS => false
+                Data::INSERTION_STATUS => false,
             ]);
         }
     }

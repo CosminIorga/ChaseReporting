@@ -66,7 +66,7 @@ class ParallelDataRepository extends DataRepository
         foreach ($fetchData as $queryDataRecord) {
             $payload = [
                 Data::TEMPORARY_TABLE_NAME => $queryData[Data::OPERATION_CREATE_TABLE][Data::TEMPORARY_TABLE_NAME],
-                Data::QUERY_DATA => $queryDataRecord
+                Data::QUERY_DATA => $queryDataRecord,
             ];
 
             $this->gearmanService->addTask(
@@ -87,9 +87,9 @@ class ParallelDataRepository extends DataRepository
         }
 
         /* Otherwise return empty collection as data will be fetched from temporary table */
+
         return collect();
     }
-
 
 
 }

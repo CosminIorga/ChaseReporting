@@ -65,9 +65,10 @@ trait OutputFunctions
         }
 
         /* Return column alias and computed query function */
+
         return [
             $columnInformation[Data::COLUMN_ALIAS],
-            $columnsStringed
+            $columnsStringed,
         ];
     }
 

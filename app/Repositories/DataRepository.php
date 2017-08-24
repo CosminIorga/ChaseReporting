@@ -99,7 +99,7 @@ abstract class DataRepository extends DefaultRepository
         } catch (\Exception $exception) {
             return [
                 false,
-                $exception->getMessage()
+                $exception->getMessage(),
             ];
         }
 
@@ -107,7 +107,7 @@ abstract class DataRepository extends DefaultRepository
             /* Create table success status */
             true,
             /* Create table message if it failed */
-            null
+            null,
         ];
     }
 
@@ -282,7 +282,7 @@ abstract class DataRepository extends DefaultRepository
      */
     protected function stringifyFetchColumns(array $fetchColumns): string
     {
-        $stringedColumns = array_map(function($columnAlias, $syntax){
+        $stringedColumns = array_map(function ($columnAlias, $syntax) {
             return "$syntax AS $columnAlias";
         }, array_keys($fetchColumns), array_values($fetchColumns));
 

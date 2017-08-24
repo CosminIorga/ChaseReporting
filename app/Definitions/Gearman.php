@@ -20,7 +20,7 @@ class Gearman
      * Constant array used to map available tasks to functions
      */
     const GEARMAN_FUNCTION_MAPPING = [
-        Gearman::FETCH_TASK => 'fetchDataUsingGearmanNode'
+        Gearman::FETCH_TASK => 'fetchDataUsingGearmanNode',
     ];
 
     /**

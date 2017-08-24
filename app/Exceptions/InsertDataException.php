@@ -19,6 +19,6 @@ class InsertDataException extends DefaultException
 
     public function report()
     {
-        \ChannelLog::error(Logger::INSERT_DATA_CHANNEL, $this->getMessage(), $this->getContext());
+        \ChannelLog::error(Logger::MODIFY_DATA_CHANNEL, $this->getMessage(), $this->getContext());
     }
 }

@@ -10,15 +10,14 @@ return [
 
     /**
      * The interval stored in the database (in minutes).
-     * Available options are stored in App\Definitions\Common.php
+     * Allowed options are stored in App\Definitions\Common.php
      */
     'data_interval' => 60,
 
 
     /**
      * The interval the table should store data.
-     * Available options are stored in App\Definitions\Common.php
-     * If 'daily' option is selected but interval is less than 60, it will trigger a MySQL error of too many columns
+     * Allowed options are stored in App\Definitions\Common.php
      */
     'table_interval' => 'daily',
 
@@ -26,5 +25,14 @@ return [
     /**
      * Flag used to detect whether parallel processing for certain features is enabled such as data fetching
      */
-    'gearman_parallel_processing' => true
+    'gearman_parallel_processing' => true,
+
+
+    /**
+     * Flag used to determine if data operations (insert / delete / update) are instantly processed
+     * or should be queued and executed at certain intervals.
+     * Allowed options are any integer value between 1 (1 minute) and 1440 (24 hours) or false.
+     * Numeric values represent the interval between each batch processing in minutes.
+     */
+    'batch_processing' => false,
 ];

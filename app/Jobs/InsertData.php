@@ -140,7 +140,7 @@ class InsertData extends DefaultJob
                     Data::INSERT_RECORD_PRIMARY_KEY_VALUE => $hashColumn,
                     Data::INSERT_RECORD_TABLE_NAME => $tableName,
                     Data::INSERT_RECORD_FIXED_DATA => array_merge($hashColumn, $pivotColumns),
-                    Data::INSERT_RECORD_VOLATILE_DATA => []
+                    Data::INSERT_RECORD_VOLATILE_DATA => [],
                 ];
             }
 
@@ -178,11 +178,12 @@ class InsertData extends DefaultJob
                 );
 
                 $this->dataRepository->insert($newRecord);
+
                 return;
             }
 
             $this->dataRepository->update($mergedIntervalColumns, [
-                current(array_keys($record[Data::INSERT_RECORD_PRIMARY_KEY_VALUE])) => $hashValue
+                current(array_keys($record[Data::INSERT_RECORD_PRIMARY_KEY_VALUE])) => $hashValue,
             ]);
         });
     }
@@ -221,7 +222,7 @@ class InsertData extends DefaultJob
 
         return [
             !empty($data),
-            $data
+            $data,
         ];
     }
 
@@ -237,7 +238,7 @@ class InsertData extends DefaultJob
         foreach ($intervals as $intervalKey => $intervalValues) {
             if (!is_array($intervalValues)) {
                 $intervalValues = [
-                    $intervalValues
+                    $intervalValues,
                 ];
             }
 
@@ -255,7 +256,7 @@ class InsertData extends DefaultJob
                 /* Convert string and int values to array */
                 if (!is_array($jsonValues)) {
                     $jsonValues = [
-                        $jsonValues
+                        $jsonValues,
                     ];
                 }
 

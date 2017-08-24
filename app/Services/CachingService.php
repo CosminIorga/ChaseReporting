@@ -48,7 +48,7 @@ class CachingService
             Data::INTERVAL_END,
             Data::COLUMNS,
             Data::GROUP_CLAUSE,
-            Data::WHERE_CLAUSE
+            Data::WHERE_CLAUSE,
         ]));
 
         /* Order data in order to maintain consistency across requests with parameters in different order */

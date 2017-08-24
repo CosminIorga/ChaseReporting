@@ -34,6 +34,7 @@ trait InputFunctions
                 }
 
                 /* Otherwise return the value from the record */
+
                 return $record[$columnName];
             case Functions::FUNCTION_COUNT:
                 /* Always return one unit if input_name is null */
@@ -42,6 +43,7 @@ trait InputFunctions
                 }
 
                 /* Otherwise evaluate column and check if value is considered non-zero */
+
                 return intval(boolval($record[$columnName]));
             default:
                 throw new ConfigException(

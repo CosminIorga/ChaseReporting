@@ -96,7 +96,7 @@ class TransformInsertData
         $hashValue = md5(implode('__', $pivotColumns));
 
         return [
-            $hashColumn[Data::CONFIG_COLUMN_NAME] => $hashValue
+            $hashColumn[Data::CONFIG_COLUMN_NAME] => $hashValue,
         ];
     }
 
@@ -146,7 +146,7 @@ class TransformInsertData
         $value = json_encode($aggregateData);
 
         return [
-            $aggregateColumnName => $value
+            $aggregateColumnName => $value,
         ];
     }
 

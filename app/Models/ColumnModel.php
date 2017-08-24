@@ -36,7 +36,7 @@ class ColumnModel extends NonPersistentModel
     protected $defaultAttributeValues = [
         self::COLUMN_INDEX => Columns::COLUMN_SIMPLE_INDEX,
         self::COLUMN_EXTRA_PARAMETERS => [],
-        self::COLUMN_ALLOW_NULL => false
+        self::COLUMN_ALLOW_NULL => false,
     ];
 
     /**
@@ -45,19 +45,19 @@ class ColumnModel extends NonPersistentModel
      */
     protected function initBefore(array $attributes)
     {
-        $this->rules= [
+        $this->rules = [
             self::COLUMN_NAME => [
                 'required',
                 'string',
             ],
             self::COLUMN_DATA_TYPE => [
                 'required',
-                Rule::in(Columns::AVAILABLE_COLUMN_DATA_TYPES)
+                Rule::in(Columns::AVAILABLE_COLUMN_DATA_TYPES),
             ],
             self::COLUMN_INDEX => [
                 'present',
-                Rule::in(Columns::AVAILABLE_COLUMN_INDEXES)
-            ]
+                Rule::in(Columns::AVAILABLE_COLUMN_INDEXES),
+            ],
         ];
     }
 

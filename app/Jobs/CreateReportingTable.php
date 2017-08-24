@@ -195,7 +195,7 @@ class CreateReportingTable extends DefaultJob
         $column = new ColumnModel($transformedData);
 
         return collect([
-            $column
+            $column,
         ]);
     }
 

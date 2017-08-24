@@ -54,6 +54,7 @@ class SerialDataRepository extends DataRepository
         /* Return data if fetch_mode is set to select */
         if ($fetchMode == Data::FETCH_DATA_MODE_SELECT) {
             $this->shouldReturnFetchResults = true;
+
             return $finalQuery->get();
         }
 

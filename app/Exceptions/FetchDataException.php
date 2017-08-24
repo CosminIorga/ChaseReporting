@@ -9,7 +9,6 @@
 namespace App\Exceptions;
 
 
-
 use App\Definitions\Logger;
 
 class FetchDataException extends DefaultException

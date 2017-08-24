@@ -44,6 +44,4 @@ class Common
         //self::TABLE_INTERVAL_MONTHLY,
         //TODO: IMPLEMENT weekly and monthly reporting tables
     ];
-
-
 }

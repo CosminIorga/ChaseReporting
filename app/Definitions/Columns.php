@@ -39,7 +39,7 @@ class Columns
         self::COLUMN_DATA_TYPE_INT,
         self::COLUMN_DATA_TYPE_STRING,
         self::COLUMN_DATA_TYPE_JSON,
-        self::COLUMN_DATA_TYPE_DATETIME
+        self::COLUMN_DATA_TYPE_DATETIME,
     ];
 
 

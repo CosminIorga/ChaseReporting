@@ -52,7 +52,7 @@ class ChannelWriterHelper
         $fileName = storage_path(
             implode(DIRECTORY_SEPARATOR, [
                 "logs",
-                "{$channelName}.log"
+                "{$channelName}.log",
             ])
         );
 

@@ -28,8 +28,8 @@ class TransformConfigColumn
             ColumnModel::COLUMN_INDEX => $configPivotColumn[Data::CONFIG_COLUMN_INDEX],
             ColumnModel::COLUMN_ALLOW_NULL => $configPivotColumn[Data::CONFIG_COLUMN_ALLOW_NULL],
             ColumnModel::COLUMN_EXTRA_PARAMETERS => [
-                ColumnModel::COLUMN_DATA_TYPE_LENGTH => $configPivotColumn[Data::CONFIG_COLUMN_DATA_TYPE_LENGTH] ?? null
-            ]
+                ColumnModel::COLUMN_DATA_TYPE_LENGTH => $configPivotColumn[Data::CONFIG_COLUMN_DATA_TYPE_LENGTH] ?? null,
+            ],
         ];
 
         return $columnData;

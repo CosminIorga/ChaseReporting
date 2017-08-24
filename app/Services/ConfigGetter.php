@@ -90,7 +90,7 @@ class ConfigGetter
         'intervalColumnData' => 'columns.intervals',
         'timestampData' => 'columns.timestamp_key',
         'aggregateData' => 'columns.aggregates',
-        'loggerChannels' => 'logger'
+        'loggerChannels' => 'logger',
     ];
 
     /**
@@ -206,7 +206,7 @@ class ConfigGetter
         /* Values assumed if key not found */
         $defaultValues = [
             Data::CONFIG_COLUMN_INDEX => Columns::COLUMN_SIMPLE_INDEX,
-            Data::CONFIG_COLUMN_ALLOW_NULL => false
+            Data::CONFIG_COLUMN_ALLOW_NULL => false,
         ];
 
         /* Validate required data */
@@ -263,7 +263,7 @@ class ConfigGetter
             $requiredKeys = [
                 Data::AGGREGATE_INPUT_NAME,
                 Data::AGGREGATE_INPUT_FUNCTION,
-                Data::AGGREGATE_OUTPUT_FUNCTIONS
+                Data::AGGREGATE_OUTPUT_FUNCTIONS,
             ];
 
             /* Values assumed if key not found */
@@ -412,7 +412,7 @@ class ConfigGetter
 
         $columnMapping[] = [
             Data::CONFIG_COLUMN_NAME => $this->_primaryColumnData[Data::CONFIG_COLUMN_NAME],
-            Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_PRIMARY
+            Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_PRIMARY,
         ];
 
         /* Fetch pivot column data */
@@ -423,7 +423,7 @@ class ConfigGetter
         foreach ($this->_pivotColumnsData as $pivot) {
             $columnMapping[] = [
                 Data::CONFIG_COLUMN_NAME => $pivot[Data::CONFIG_COLUMN_NAME],
-                Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_PIVOT
+                Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_PIVOT,
             ];
         }
 
@@ -434,7 +434,7 @@ class ConfigGetter
 
         $columnMapping[] = [
             Data::CONFIG_COLUMN_NAME => $this->_timestampData[Data::CONFIG_COLUMN_NAME],
-            Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_TIMESTAMP
+            Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_TIMESTAMP,
         ];
 
         return $columnMapping;
@@ -462,7 +462,7 @@ class ConfigGetter
         }
 
         return array_merge($this->_aggregateData[$jsonName], [
-            Data::AGGREGATE_JSON_NAME => $jsonName
+            Data::AGGREGATE_JSON_NAME => $jsonName,
         ]);
     }
 

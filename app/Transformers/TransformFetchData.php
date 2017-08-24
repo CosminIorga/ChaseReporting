@@ -120,8 +120,8 @@ class TransformFetchData
                 ColumnModel::COLUMN_ALLOW_NULL => $groupColumnConfig[Data::CONFIG_COLUMN_ALLOW_NULL],
                 ColumnModel::COLUMN_EXTRA_PARAMETERS => [
                     ColumnModel::COLUMN_DATA_TYPE_LENGTH =>
-                        $groupColumnConfig[Data::CONFIG_COLUMN_DATA_TYPE_LENGTH] ?? null
-                ]
+                        $groupColumnConfig[Data::CONFIG_COLUMN_DATA_TYPE_LENGTH] ?? null,
+                ],
             ]));
         }
 
@@ -131,12 +131,12 @@ class TransformFetchData
             ColumnModel::COLUMN_DATA_TYPE => Columns::COLUMN_DATA_TYPE_JSON,
             ColumnModel::COLUMN_INDEX => Columns::COLUMN_NO_INDEX,
             ColumnModel::COLUMN_ALLOW_NULL => false,
-            ColumnModel::COLUMN_EXTRA_PARAMETERS => []
+            ColumnModel::COLUMN_EXTRA_PARAMETERS => [],
         ]));
 
         return [
             Data::TEMPORARY_TABLE_NAME => $this->computeTemporaryTableName(),
-            Data::TEMPORARY_TABLE_COLUMN_DEFINITIONS => $columnDefinitions
+            Data::TEMPORARY_TABLE_COLUMN_DEFINITIONS => $columnDefinitions,
         ];
     }
 
@@ -197,7 +197,7 @@ class TransformFetchData
 
         return [
             Data::FETCH_DATA_MODE => $fetchDataMode,
-            Data::FETCH_DATA => $fetchOperations
+            Data::FETCH_DATA => $fetchOperations,
         ];
     }
 
@@ -307,7 +307,7 @@ class TransformFetchData
             Data::TEMPORARY_TABLE_AGGREGATE_COLUMN_NAME => sprintf(
                 Functions::JSON_OBJECT_FUNCTION,
                 implode(', ', $computedColumns)
-            )
+            ),
         ];
     }
 }

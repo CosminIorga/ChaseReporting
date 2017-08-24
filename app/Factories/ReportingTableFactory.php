@@ -9,7 +9,6 @@
 namespace App\Factories;
 
 
-
 use App\Models\ReportingTables\ReportingTable;
 
 class ReportingTableFactory

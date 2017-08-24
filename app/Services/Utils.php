@@ -48,7 +48,7 @@ class Utils
 
 
                 $pluses = array_map(function (string $header) use ($spaces) {
-                    return str_pad("", $spaces[$header] , "-", STR_PAD_BOTH);
+                    return str_pad("", $spaces[$header], "-", STR_PAD_BOTH);
                 }, array_keys((array) $record));
 
                 $output .= implode('-+-', $pluses);

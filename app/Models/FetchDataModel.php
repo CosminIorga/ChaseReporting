@@ -58,7 +58,7 @@ class FetchDataModel
             Data::COLUMNS => [],
             Data::GROUP_CLAUSE => null,
             Data::WHERE_CLAUSE => null,
-            Data::ORDER_CLAUSE => null
+            Data::ORDER_CLAUSE => null,
         ];
 
         return $this;
@@ -182,7 +182,7 @@ class FetchDataModel
         $notNull = [
             Data::INTERVAL_START,
             Data::INTERVAL_END,
-            Data::GROUP_CLAUSE
+            Data::GROUP_CLAUSE,
         ];
 
         $notEmpty = [
@@ -284,7 +284,7 @@ class FetchDataModel
                     FetchDataException::END_DATE_LOWER_THAN_START_DATE,
                     [
                         Data::INTERVAL_START => $startDate,
-                        Data::INTERVAL_END => $endDate
+                        Data::INTERVAL_END => $endDate,
                     ]
                 );
             }

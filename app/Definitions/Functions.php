@@ -23,7 +23,7 @@ class Functions
         self::FUNCTION_SUM,
         self::FUNCTION_COUNT,
         self::FUNCTION_MAX,
-        self::FUNCTION_MIN
+        self::FUNCTION_MIN,
     ];
 
     /**
@@ -63,7 +63,7 @@ class Functions
             self::GROUP_AGGREGATOR => 'MIN(%1$s)',
             self::MULTIPLE_COLUMNS_AGGREGATOR => 'LEAST(%1$s)',
             self::ESCAPE_OPERATOR => self::IF_NULL_ESCAPE_FOR_NUMBERS,
-        ]
+        ],
     ];
 
 }

@@ -9,7 +9,6 @@
 namespace App\Exceptions;
 
 
-
 class ServiceException extends DefaultException
 {
 
