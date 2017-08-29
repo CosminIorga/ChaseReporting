@@ -11,7 +11,6 @@ use App\Models\ReportingTables\ReportingTable;
 use App\Models\ResponseModel;
 use App\Repositories\DataRepository;
 use App\Services\ConfigGetter;
-use App\Traits\CustomConsoleOutput;
 use App\Traits\LogHelper;
 use App\Transformers\TransformConfigColumn;
 use Carbon\Carbon;
@@ -19,7 +18,6 @@ use Illuminate\Support\Collection;
 
 class CreateReportingTable extends DefaultJob
 {
-    use CustomConsoleOutput;
     use LogHelper;
 
     const CONNECTION = "sync";
@@ -100,7 +98,11 @@ class CreateReportingTable extends DefaultJob
         $this->dataInterval = $this->configGetter->dataInterval;
     }
 
-
+    /**
+     * Create reporting table
+     * @param DataRepository $dataRepository
+     * @return ResponseModel
+     */
     public function handle(
         DataRepository $dataRepository
     ): ResponseModel {
@@ -177,7 +179,7 @@ class CreateReportingTable extends DefaultJob
 
         $intervalColumns = $this->computeIntervalColumns();
 
-        $this->tableStructure = collect([])
+        $this->tableStructure = collect()
             ->merge($primaryColumn)
             ->merge($pivotColumns)
             ->merge($intervalColumns);
@@ -207,7 +209,7 @@ class CreateReportingTable extends DefaultJob
     {
         $data = $this->configGetter->pivotColumnsData;
 
-        $columns = collect([]);
+        $columns = collect();
 
         array_walk($data, function ($record) use ($columns) {
             $transformedData = (new TransformConfigColumn())->toColumnModelData($record);
@@ -227,7 +229,7 @@ class CreateReportingTable extends DefaultJob
     {
         $columnCount = $this->reportingTableModel->getIntervalColumnCount();
         $range = range(1, $columnCount);
-        $data = collect([]);
+        $data = collect();
         $configData = $this->configGetter->intervalColumnData;
 
         array_walk($range, function ($columnIndex) use ($data, $configData) {

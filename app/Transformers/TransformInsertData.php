@@ -36,16 +36,23 @@ class TransformInsertData
      */
     protected $columnMapping;
 
+    /**
+     * Variable used to store the current operation to be executed
+     * @var string
+     */
+    protected $operation;
+
 
     /**
      * Transform input data to match an array used by InsertDataModel
+     * @param string $operation
      * @param array $record
      * @param ReportingTable $reportingTableModel
      * @return array
      */
-    public function toReportingData(array $record, ReportingTable $reportingTableModel): array
+    public function toReportingData(string $operation, array $record, ReportingTable $reportingTableModel): array
     {
-        $this->init($record, $reportingTableModel);
+        $this->init($operation, $record, $reportingTableModel);
 
         /* Compute pivot columns */
         $pivotColumns = $this->computePivotColumns();
@@ -65,15 +72,36 @@ class TransformInsertData
 
     /**
      * Small function used to initialize fields
+     * @param string $operation
      * @param array $record
      * @param ReportingTable $reportingTableModel
      */
-    protected function init(array $record, ReportingTable $reportingTableModel)
+    protected function init(string $operation, array $record, ReportingTable $reportingTableModel)
     {
+        $this->operation = $operation;
         $this->record = $record;
         $this->reportingTableModel = $reportingTableModel;
 
-        $this->columnMapping = (ConfigGetter::Instance())->getColumnMapping();
+        $this->columnMapping = (ConfigGetter::Instance())->columnMapping;
+    }
+
+    /**
+     * Function used to compute hash column values based on current record
+     * @return array
+     */
+    protected function computePivotColumns(): array
+    {
+        /* Take pivot columns */
+        $pivotColumns = array_filter($this->columnMapping, function ($columnInfo) {
+            return ($columnInfo[Data::CONFIG_COLUMN_TYPE] == Columns::COLUMN_PIVOT);
+        });
+
+        $pivotColumnNames = array_column($pivotColumns, Data::CONFIG_COLUMN_NAME);
+
+        /* Take pivot values from record */
+        $pivotValues = array_intersect_key($this->record, array_flip($pivotColumnNames));
+
+        return $pivotValues;
     }
 
     /**
@@ -101,26 +129,6 @@ class TransformInsertData
     }
 
     /**
-     * Function used to compute hash column values based on current record
-     * @return array
-     */
-    protected function computePivotColumns(): array
-    {
-        /* Take pivot columns */
-        $pivotColumns = array_filter($this->columnMapping, function ($columnInfo) {
-            return ($columnInfo[Data::CONFIG_COLUMN_TYPE] == Columns::COLUMN_PIVOT);
-        });
-
-        $pivotColumnNames = array_column($pivotColumns, Data::CONFIG_COLUMN_NAME);
-
-        /* Take pivot values from record */
-        $pivotValues = array_intersect_key($this->record, array_flip($pivotColumnNames));
-
-        return $pivotValues;
-    }
-
-
-    /**
      * Function used to compute aggregate column value based on current record and config aggregate data
      * @return array
      */
@@ -130,7 +138,7 @@ class TransformInsertData
         $aggregateColumnName = $this->reportingTableModel->getIntervalColumnByReferenceData();
 
         /* Get aggregate config data */
-        $aggregateConfigData = (ConfigGetter::Instance())->aggregateData;
+        $aggregateConfigData = (ConfigGetter::Instance())->allAggregateData;
 
         $aggregateData = [];
 
@@ -138,7 +146,11 @@ class TransformInsertData
         array_walk(
             $aggregateConfigData,
             function (array $aggregateConfig, string $aggregateJsonName) use (&$aggregateData) {
-                $aggregateData[$aggregateJsonName] = $this->getAggregateValue($this->record, $aggregateConfig);
+                $aggregateData[$aggregateJsonName] = $this->getAggregateValue(
+                    $this->operation,
+                    $this->record,
+                    $aggregateConfig
+                );
             }
         );
 

@@ -11,11 +11,13 @@ namespace App\Exceptions;
 
 use App\Definitions\Logger;
 
-class InsertDataException extends DefaultException
+class ModifyDataException extends DefaultException
 {
 
     const DATA_IS_EMPTY = 'Received data is an empty array';
     const INCOMPLETE_RECORD = 'Record does not contain all necessary data. Missing: %s';
+    const INVALID_MODIFY_DATA_OPERATION = 'Invalid modify data operation. Given: %s';
+    const RECORD_NOT_FOUND = "Record does not exist";
 
     public function report()
     {

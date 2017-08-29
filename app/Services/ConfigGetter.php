@@ -26,10 +26,21 @@ use App\Exceptions\ServiceException;
  * @property array $intervalColumnData
  * @property array $timestampData
  * @property array $aggregateData
+ * @property array $metaAggregateData
+ * @property array $allAggregateData
  * @property array $loggerChannels
+ * @property array $columnMapping
  */
 class ConfigGetter
 {
+    /**
+     * Constants used in mapping array
+     */
+    const TYPE = 'type';
+    const CONFIG = 'config';
+
+    const CONFIG_TYPE = 'config';
+    const PROCESS_TYPE = 'process';
 
     /**
      * @var string
@@ -69,6 +80,16 @@ class ConfigGetter
     /**
      * @var array
      */
+    protected $_metaAggregateData;
+
+    /**
+     * @var array
+     */
+    protected $_allAggregateData;
+
+    /**
+     * @var array
+     */
     protected $_loggerChannels;
 
     /**
@@ -83,15 +104,52 @@ class ConfigGetter
      * @var array
      */
     protected $mapping = [
-        'tableInterval' => 'common.table_interval',
-        'dataInterval' => 'common.data_interval',
-        'primaryColumnData' => 'columns.primary_key',
-        'pivotColumnsData' => 'columns.pivots',
-        'intervalColumnData' => 'columns.intervals',
-        'timestampData' => 'columns.timestamp_key',
-        'aggregateData' => 'columns.aggregates',
-        'loggerChannels' => 'logger',
+        'tableInterval' => [
+            self::TYPE => self::CONFIG_TYPE,
+            self::CONFIG => 'common.table_interval',
+        ],
+        'dataInterval' => [
+            self::TYPE => self::CONFIG_TYPE,
+            self::CONFIG => 'common.data_interval',
+        ],
+        'primaryColumnData' => [
+            self::TYPE => self::CONFIG_TYPE,
+            self::CONFIG => 'columns.primary_key',
+        ],
+        'pivotColumnsData' => [
+            self::TYPE => self::CONFIG_TYPE,
+            self::CONFIG => 'columns.pivots',
+        ],
+        'intervalColumnData' => [
+            self::TYPE => self::CONFIG_TYPE,
+            self::CONFIG => 'columns.intervals',
+        ],
+        'timestampData' => [
+            self::TYPE => self::CONFIG_TYPE,
+            self::CONFIG => 'columns.timestamp_key',
+        ],
+        'aggregateData' => [
+            self::TYPE => self::CONFIG_TYPE,
+            self::CONFIG => 'columns.aggregates',
+        ],
+        'metaAggregateData' => [
+            self::TYPE => self::CONFIG_TYPE,
+            self::CONFIG => 'columns.meta_aggregates',
+        ],
+        'loggerChannels' => [
+            self::TYPE => self::CONFIG_TYPE,
+            self::CONFIG => 'logger',
+        ],
+        'allAggregateData' => [
+            self::TYPE => self::PROCESS_TYPE,
+            self::CONFIG => null,
+        ],
+        'columnMapping' => [
+            self::TYPE => self::PROCESS_TYPE,
+            self::CONFIG => null,
+        ],
     ];
+
 
     /**
      * Instantiator for
@@ -120,7 +178,7 @@ class ConfigGetter
      * @param string $tableInterval
      * @throws ConfigException
      */
-    protected function validateAndProcessTableInterval(string $tableInterval)
+    protected function processAndValidateTableInterval(string $tableInterval)
     {
         /* Check if tableInterval in allowed table intervals */
         if (!in_array($tableInterval, Common::AVAILABLE_TABLE_INTERVALS)) {
@@ -139,7 +197,7 @@ class ConfigGetter
      * @param int $dataInterval
      * @throws ConfigException
      */
-    protected function validateAndProcessDataInterval(int $dataInterval)
+    protected function processAndValidateDataInterval(int $dataInterval)
     {
         if (!in_array($dataInterval, Common::AVAILABLE_DATA_INTERVALS)) {
             throw new ConfigException(
@@ -156,19 +214,19 @@ class ConfigGetter
      * Function used to validate primary column data
      * @param array $primaryColumnData
      */
-    protected function validateAndProcessPrimaryColumnData(array &$primaryColumnData)
+    protected function processAndValidatePrimaryColumnData(array &$primaryColumnData)
     {
-        $this->validateAndProcessColumnData($primaryColumnData);
+        $this->processAndValidateColumnData($primaryColumnData);
     }
 
     /**
      * Function used to validate pivot columns data
      * @param array $pivotColumnsData
      */
-    protected function validateAndProcessPivotColumnsData(array &$pivotColumnsData)
+    protected function processAndValidatePivotColumnsData(array &$pivotColumnsData)
     {
         foreach ($pivotColumnsData as &$pivotColumnData) {
-            $this->validateAndProcessColumnData($pivotColumnData);
+            $this->processAndValidateColumnData($pivotColumnData);
         }
     }
 
@@ -176,18 +234,18 @@ class ConfigGetter
      * Function used to validate interval column data
      * @param array $intervalColumnData
      */
-    protected function validateAndProcessIntervalColumnData(array &$intervalColumnData)
+    protected function processAndValidateIntervalColumnData(array &$intervalColumnData)
     {
-        $this->validateAndProcessColumnData($intervalColumnData);
+        $this->processAndValidateColumnData($intervalColumnData);
     }
 
     /**
      * Function used to validate timestamp column data
      * @param array $timestampData
      */
-    protected function validateAndProcessTimestampData(array &$timestampData)
+    protected function processAndValidateTimestampData(array &$timestampData)
     {
-        $this->validateAndProcessColumnData($timestampData);
+        $this->processAndValidateColumnData($timestampData);
     }
 
     /**
@@ -195,7 +253,7 @@ class ConfigGetter
      * @param array $columnData
      * @throws ConfigException
      */
-    protected function validateAndProcessColumnData(array &$columnData)
+    protected function processAndValidateColumnData(array &$columnData)
     {
         /* Required keys that have to be in column data */
         $requiredKeys = [
@@ -257,7 +315,7 @@ class ConfigGetter
      * @param array $aggregateData
      * @throws ConfigException
      */
-    protected function validateAndProcessAggregateData(array &$aggregateData)
+    protected function processAndValidateAggregateData(array &$aggregateData)
     {
         foreach ($aggregateData as $aggregateKey => &$aggregateRecord) {
             $requiredKeys = [
@@ -292,11 +350,72 @@ class ConfigGetter
     }
 
     /**
+     * Function used to validate meta aggregate config data against same aggregate data rules
+     * @param array $metaAggregateData
+     */
+    protected function processAndValidateMetaAggregateData(array &$metaAggregateData)
+    {
+        $this->processAndValidateAggregateData($metaAggregateData);
+    }
+
+    /**
+     * Function used to compute and validate allAggregateData array based on aggregateData and metaAggregateData
+     * @return array
+     */
+    protected function computeAndValidateAllAggregateData(): array
+    {
+        $this->computeAndStoreDataIfNotExists('aggregateData');
+        $this->computeAndStoreDataIfNotExists('metaAggregateData');
+
+        return array_merge(
+            $this->fetchData('aggregateData'),
+            $this->fetchData('metaAggregateData')
+        );
+    }
+
+    /**
+     * Function used to compute column mapping
+     * @return array
+     */
+    protected function computeAndValidateColumnMapping(): array
+    {
+        $columnMapping = [];
+
+        /* Fetch primary column data */
+        $this->computeAndStoreDataIfNotExists('primaryColumnData');
+
+        $columnMapping[] = [
+            Data::CONFIG_COLUMN_NAME => $this->_primaryColumnData[Data::CONFIG_COLUMN_NAME],
+            Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_PRIMARY,
+        ];
+
+        /* Fetch pivot column data */
+        $this->computeAndStoreDataIfNotExists('pivotColumnsData');
+
+        foreach ($this->_pivotColumnsData as $pivot) {
+            $columnMapping[] = [
+                Data::CONFIG_COLUMN_NAME => $pivot[Data::CONFIG_COLUMN_NAME],
+                Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_PIVOT,
+            ];
+        }
+
+        /* Fetch timestamp column data */
+        $this->computeAndStoreDataIfNotExists('timestampData');
+
+        $columnMapping[] = [
+            Data::CONFIG_COLUMN_NAME => $this->_timestampData[Data::CONFIG_COLUMN_NAME],
+            Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_TIMESTAMP,
+        ];
+
+        return $columnMapping;
+    }
+
+    /**
      * Function used to validate config logger channels
      * @param array $loggerChannels
      * @throws ConfigException
      */
-    protected function validateAndProcessLoggerChannels(array $loggerChannels)
+    protected function processAndValidateLoggerChannels(array $loggerChannels)
     {
         /* Iterate over each logger channel */
         foreach ($loggerChannels as $channel) {
@@ -341,7 +460,7 @@ class ConfigGetter
      */
     public function __get(string $name)
     {
-        /* Check if variable is allowed to be fetched */
+        /* Check if variable has a mapping association */
         if (!in_array($name, array_keys($this->mapping))) {
             throw new ServiceException(
                 sprintf(
@@ -351,93 +470,108 @@ class ConfigGetter
             );
         }
 
-        if (!is_null($this->{"_{$name}"})) {
-            return $this->{"_{$name}"};
+        $this->computeAndStoreDataIfNotExists($name);
+
+        return $this->fetchData($name);
+    }
+
+    /**
+     * Function used to compute and store data if not exists
+     * @param string $name
+     */
+    protected function computeAndStoreDataIfNotExists(string $name)
+    {
+        if (!$this->checkIfDataExists($name)) {
+            $this->computeAndStoreData($name);
         }
+    }
 
-        /* Get config value */
-        $data = $this->computeValue($name);
+    /**
+     * Function used to compute and store data
+     * @param string $name
+     */
+    protected function computeAndStoreData(string $name)
+    {
+        $data = $this->computeData($name);
 
-        /* Store data */
+        $this->storeData($name, $data);
+    }
+
+    /**
+     * Small function used to store data in name variable
+     * @param string $name
+     * @param mixed $data
+     */
+    protected function storeData(string $name, $data)
+    {
         $this->{"_{$name}"} = $data;
+    }
 
+    /**
+     * Small function used to fetch data given a variable name
+     * @param string $name
+     * @return mixed
+     */
+    protected function fetchData(string $name)
+    {
         return $this->{"_{$name}"};
     }
 
     /**
-     * Function used to compute a config value given a variable name
+     * Small function used to check if value is null
+     * @param string $name
+     * @return bool
+     */
+    protected function checkIfDataExists(string $name)
+    {
+        return !is_null($this->{"_{$name}"});
+    }
+
+    /**
+     * Function used to compute data based on given variable name
      * @param string $name
      * @return mixed
+     * @throws ConfigException
      */
-    protected function computeValue(string $name)
+    protected function computeData(string $name)
     {
-        /* Get config value */
-        $data = config($this->mapping[$name]);
+        $mapping = $this->mapping[$name];
 
-        /* Validate data */
-        $function = "validateAndProcess" . ucfirst($name);
+        switch ($mapping[self::TYPE]) {
+            case self::CONFIG_TYPE:
+                /* Get config value */
+                $data = config($mapping[self::CONFIG]);
 
-        if (method_exists($this, $function)) {
-            $this->$function($data);
+                /* Compute the function that processes and validates data */
+                $function = "processAndValidate" . ucfirst($name);
+
+                /* Call function if defined */
+                if (method_exists($this, $function)) {
+                    $this->$function($data);
+                }
+
+                return $data;
+            case self::PROCESS_TYPE:
+                /* Compute function that computes and validates data */
+                $function = "computeAndValidate" . ucfirst($name);
+
+                if (!method_exists($this, $function)) {
+                    throw new ConfigException(sprintf(
+                        ConfigException::COMPUTE_FUNCTION_NOT_DEFINED,
+                        $name
+                    ));
+                }
+
+                $data = $this->$function();
+
+                return $data;
+                break;
+            default:
+                throw new ConfigException(sprintf(
+                    ConfigException::INVALID_MAPPING_TYPE,
+                    $mapping[self::TYPE]
+                ));
         }
-
-        return $data;
-    }
-
-    /**
-     * Function used to return an association between column type and column name
-     * @return array
-     */
-    public function getColumnMapping(): array
-    {
-        if (is_null($this->_columnMapping)) {
-            $this->_columnMapping = $this->computeColumnMapping();
-        }
-
-        return $this->_columnMapping;
-    }
-
-    /**
-     * Function used to compute column mapping
-     * @return array
-     */
-    protected function computeColumnMapping(): array
-    {
-        $columnMapping = [];
-
-        /* Fetch primary column data */
-        if (is_null($this->_primaryColumnData)) {
-            $this->_primaryColumnData = $this->computeValue('primaryColumnData');
-        }
-
-        $columnMapping[] = [
-            Data::CONFIG_COLUMN_NAME => $this->_primaryColumnData[Data::CONFIG_COLUMN_NAME],
-            Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_PRIMARY,
-        ];
-
-        /* Fetch pivot column data */
-        if (is_null($this->_pivotColumnsData)) {
-            $this->_pivotColumnsData = $this->computeValue('pivotColumnsData');
-        }
-
-        foreach ($this->_pivotColumnsData as $pivot) {
-            $columnMapping[] = [
-                Data::CONFIG_COLUMN_NAME => $pivot[Data::CONFIG_COLUMN_NAME],
-                Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_PIVOT,
-            ];
-        }
-
-        /* Fetch timestamp column data */
-        if (is_null($this->_timestampData)) {
-            $this->_timestampData = $this->computeValue('timestampData');
-        }
-
-        $columnMapping[] = [
-            Data::CONFIG_COLUMN_NAME => $this->_timestampData[Data::CONFIG_COLUMN_NAME],
-            Data::CONFIG_COLUMN_TYPE => Columns::COLUMN_TIMESTAMP,
-        ];
-
-        return $columnMapping;
     }
 
     /**
@@ -448,11 +582,11 @@ class ConfigGetter
      */
     public function getAggregateConfigByJsonName(string $jsonName): array
     {
-        if (is_null($this->_aggregateData)) {
-            $this->_aggregateData = $this->computeValue('aggregateData');
-        }
+        $this->computeAndStoreDataIfNotExists('allAggregateData');
 
-        if (!array_key_exists($jsonName, $this->_aggregateData)) {
+        $allAggregateData = $this->fetchData('allAggregateData');
+
+        if (!array_key_exists($jsonName, $allAggregateData)) {
             throw new ConfigException(
                 sprintf(
                     ConfigException::UNKNOWN_AGGREGATE_JSON_NAME,
@@ -461,7 +595,7 @@ class ConfigGetter
             );
         }
 
-        return array_merge($this->_aggregateData[$jsonName], [
+        return array_merge($allAggregateData[$jsonName], [
             Data::AGGREGATE_JSON_NAME => $jsonName,
         ]);
     }
@@ -474,11 +608,9 @@ class ConfigGetter
      */
     public function getPivotConfigByName(string $pivotName): array
     {
-        if (is_null($this->_pivotColumnsData)) {
-            $this->_pivotColumnsData = $this->computeValue('pivotColumnsData');
-        }
+        $this->computeAndStoreDataIfNotExists('pivotColumnsData');
 
-        foreach ($this->_pivotColumnsData as $pivotColumnsDatum) {
+        foreach ($this->fetchData('pivotColumnsData') as $pivotColumnsDatum) {
             if ($pivotColumnsDatum[Data::CONFIG_COLUMN_NAME] == $pivotName) {
                 return $pivotColumnsDatum;
             }
@@ -491,6 +623,5 @@ class ConfigGetter
             )
         );
     }
-
 
 }

@@ -27,6 +27,8 @@ class ConfigException extends DefaultException
 
     const INVALID_CONFIG_FUNCTION_RECEIVED = 'Invalid config function. Given: %s';
     const INVALID_CONFIG_EXTRA_KEY_RECEIVED = 'Invalid config extra key. Given: %s';
+    const COMPUTE_FUNCTION_NOT_DEFINED = 'Computed function not defined for %s';
+    const INVALID_MAPPING_TYPE = 'Invalid mapping type. Given: %s';
 
     const LOGGER_CHANNEL_MEDIUM_KEY_NOT_ARRAY = 'Logger channel medium must be of type array.';
     const LOGGER_CHANNEL_MEDIUM_NOT_EMPTY = 'Logger channel medium most not be empty';

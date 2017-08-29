@@ -169,6 +169,17 @@ abstract class DataRepository extends DefaultRepository
     }
 
     /**
+     * Function used to delete a record
+     * @param array $whereClause
+     * @param int $limit
+     */
+    public function delete(array $whereClause, int $limit = 1)
+    {
+        $this->initQueryBuilder()->where($whereClause)->limit($limit)->delete();
+    }
+
+
+    /**
      * Function used to fetch data based on given queries
      * @param array $queryData
      * @return Collection
@@ -200,7 +211,8 @@ abstract class DataRepository extends DefaultRepository
         }
 
         if (env('APP_DEBUG') == true) {
-            dump(\DB::getQueryLog());
+            true;
+            //dump(\DB::getQueryLog());
         }
 
         if ($this->shouldReturnFetchResults) {

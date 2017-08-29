@@ -17,14 +17,16 @@ trait InputFunctions
 {
     /**
      * Function used to return aggregate value given record and aggregate config
+     * @param string $operation
      * @param array $record
      * @param array $aggregateConfig
-     * @return string|int|null
+     * @return int|null|string
      * @throws ConfigException
      */
-    protected function getAggregateValue(array $record, array $aggregateConfig)
+    protected function getAggregateValue(string $operation, array $record, array $aggregateConfig)
     {
         $columnName = $aggregateConfig[Data::AGGREGATE_INPUT_NAME];
+        $sign = $this->returnSignByOperation($operation);
 
         switch ($aggregateConfig[Data::AGGREGATE_INPUT_FUNCTION]) {
             case Functions::FUNCTION_SUM:
@@ -35,16 +37,16 @@ trait InputFunctions
 
                 /* Otherwise return the value from the record */
 
-                return $record[$columnName];
+                return $sign * $record[$columnName];
             case Functions::FUNCTION_COUNT:
                 /* Always return one unit if input_name is null */
                 if (is_null($columnName)) {
-                    return Data::ONE_UNIT;
+                    return $sign * Data::ONE_UNIT;
                 }
 
                 /* Otherwise evaluate column and check if value is considered non-zero */
 
-                return intval(boolval($record[$columnName]));
+                return $sign * intval(boolval($record[$columnName]));
             default:
                 throw new ConfigException(
                     sprintf(
@@ -114,5 +116,15 @@ trait InputFunctions
         }
 
         return $result;
+    }
+
+    /**
+     * Short function used to return 1 or -1 depending on the given operation
+     * @param string $operation
+     * @return int
+     */
+    protected function returnSignByOperation(string $operation): int
+    {
+        return ($operation == Data::MODIFY_DATA_OPERATION_INSERT) ? 1 : -1;
     }
 }

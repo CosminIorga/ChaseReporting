@@ -57,4 +57,11 @@ class Columns
         Columns::COLUMN_PRIMARY_INDEX,
         Columns::COLUMN_NO_INDEX,
     ];
+
+    /**
+     * Meta columns
+     */
+    const META_RECORD_COUNT = 'meta_record_count';
+
+
 }

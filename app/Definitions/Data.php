@@ -12,6 +12,17 @@ namespace App\Definitions;
 class Data
 {
     /**
+     * Modify data operations
+     */
+    const MODIFY_DATA_OPERATION_INSERT = 'insert';
+    const MODIFY_DATA_OPERATION_DELETE = 'delete';
+
+    const ALLOWED_MODIFY_DATA_OPERATIONS = [
+        self::MODIFY_DATA_OPERATION_DELETE,
+        self::MODIFY_DATA_OPERATION_INSERT,
+    ];
+
+    /**
      * Value returned if to-be-inserted record does not contain the corresponding key for an aggregator
      */
     const EMPTY_VALUE = null;
@@ -30,10 +41,10 @@ class Data
     /**
      * Definitions for an insert record
      */
-    const INSERT_RECORD_PRIMARY_KEY_VALUE = "primaryKeyValue";
-    const INSERT_RECORD_TABLE_NAME = "tableName";
-    const INSERT_RECORD_FIXED_DATA = "fixedData";
-    const INSERT_RECORD_VOLATILE_DATA = "volatileData";
+    const INSERT_RECORD_PRIMARY_KEY_VALUE = "primary_key_value";
+    const INSERT_RECORD_TABLE_NAME = "table_name";
+    const INSERT_RECORD_FIXED_COLUMNS = "fixed_columns";
+    const INSERT_RECORD_AGGREGATE_COLUMNS = "aggregate_columns";
 
     /**
      * Aggregated column definitions

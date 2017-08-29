@@ -24,7 +24,7 @@ return [
     /**
      * Channel used exclusively for logs related to reporting table creation
      */
-    'creation' => [
+    'create_reporting_table' => [
         'min_level' => 'debug',
         'mediums' => [
             'registerToFileSystem' => true,
@@ -32,9 +32,9 @@ return [
     ],
 
     /**
-     * Channel used exclusively for logs related to reporting table data insertion
+     * Channel used exclusively for logs related to reporting table data modification
      */
-    'insertion' => [
+    'alter_data' => [
         'min_level' => 'debug',
         'mediums' => [
             'registerToFileSystem' => true,
@@ -44,7 +44,7 @@ return [
     /**
      * Channel used exclusively for logs related to data fetching from reporting tables
      */
-    'fetching' => [
+    'fetch_data' => [
         'min_level' => 'debug',
         'mediums' => [
             'registerToFileSystem' => true,

@@ -14,7 +14,7 @@ return [
     'timestamp_key' => [
         'name' => 'start_date',
         'dataType' => 'datetime',
-        'allowNull' => false
+        'allowNull' => false,
     ],
 
 
@@ -70,7 +70,7 @@ return [
         'name' => 'interval_%1$s_%2$s',
         'dataType' => 'json',
         'index' => null,
-        'allowNull' => true
+        'allowNull' => true,
     ],
 
 
@@ -91,11 +91,11 @@ return [
             'output_functions' => [
                 'sum',
                 'max',
-                'min'
+                'min',
             ],
             'extra' => [
-                'round' => 4
-            ]
+                'round' => 4,
+            ],
         ],
         'interval_cost' => [
             'input_name' => 'cost',
@@ -103,11 +103,11 @@ return [
             'output_functions' => [
                 'sum',
                 'max',
-                'min'
+                'min',
             ],
             'extra' => [
-                'round' => 4
-            ]
+                'round' => 4,
+            ],
         ],
         'interval_records' => [
             'input_name' => null,
@@ -115,16 +115,30 @@ return [
             'output_functions' => [
                 'sum',
                 'max',
-                'min'
-            ]
+                'min',
+            ],
         ],
         'interval_full_records' => [
             'input_name' => 'is_full_record',
             'input_function' => 'count',
             'output_functions' => [
-                'sum'
-            ]
+                'sum',
+            ],
+        ],
+    ],
+
+    /**
+     * Meta aggregates consist of aggregates used internally by the application
+     * Meta information is stored along with normal aggregates but are invisible to end-user
+     */
+    'meta_aggregates' => [
+        'meta_record_count' => [
+            'input_name' => null,
+            'input_function' => 'count',
+            'output_functions' => [
+                'sum',
+            ],
         ]
-    ]
+    ],
 
 ];
