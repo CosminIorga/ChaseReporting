@@ -90,6 +90,7 @@ class Data
     const FETCH_DATA_COLUMNS = 'fetch_data_columns';
     const FETCH_DATA_WHERE_CLAUSE = 'fetch_data_where_clause';
     const FETCH_DATA_GROUP_CLAUSE = 'fetch_data_group_clause';
+    const FETCH_DATA_ORDER_CLAUSE = 'fetch_data_order_clause';
     const FETCH_DATA_MODE = 'fetch_data_mode';
 
     const FETCH_DATA_MODE_INSERT = 'fetch_data_mode_insert';

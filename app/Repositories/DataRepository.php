@@ -11,9 +11,11 @@ namespace App\Repositories;
 
 use App\Definitions\Columns;
 use App\Definitions\Data;
+use App\Definitions\Logger;
 use App\Exceptions\FetchDataException;
 use App\Models\ColumnModel;
 use App\Services\ConfigGetter;
+use App\Traits\LogHelper;
 use DB;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Schema\Blueprint;
@@ -22,6 +24,8 @@ use Illuminate\Support\Collection;
 
 abstract class DataRepository extends DefaultRepository
 {
+    use LogHelper;
+
     /**
      * The table name
      * @var string
@@ -33,6 +37,14 @@ abstract class DataRepository extends DefaultRepository
      * @var bool
      */
     protected $shouldReturnFetchResults = false;
+
+    /**
+     * DataRepository constructor.
+     */
+    public function __construct()
+    {
+        $this->setChannel(Logger::FETCH_DATA_CHANNEL);
+    }
 
     /**
      * Function used to set table for DataModel
@@ -231,6 +243,7 @@ abstract class DataRepository extends DefaultRepository
     {
         /* Check if "create_table" operation exists */
         if (!array_key_exists(Data::OPERATION_CREATE_TABLE, $queryData)) {
+            $this->debug("No pre-fetch operations required");
             return;
         }
 
@@ -254,6 +267,7 @@ abstract class DataRepository extends DefaultRepository
     {
         /* Do nothing if no "fetch_temporary_data" operation exists */
         if (!array_key_exists(Data::OPERATION_FETCH_TEMPORARY_DATA, $queryData)) {
+            $this->debug("No post-fetch operations required");
             return collect();
         }
 
@@ -265,8 +279,10 @@ abstract class DataRepository extends DefaultRepository
         $query = $this->initQueryBuilder()
             /* Add select columns */
             ->select(DB::raw($this->stringifyFetchColumns($fetchTemporaryDataOperation[Data::FETCH_DATA_COLUMNS])))
-            /* Add group clause */
+            /* Add groupBy clause */
             ->groupBy($fetchTemporaryDataOperation[Data::FETCH_DATA_GROUP_CLAUSE]);
+
+        $query = $this->addOrderByClauseToQuery($query, $fetchTemporaryDataOperation[Data::FETCH_DATA_ORDER_CLAUSE]);
 
         $data = $query->get();
 
@@ -284,7 +300,7 @@ abstract class DataRepository extends DefaultRepository
      */
     protected function revertOperations(array $queryData)
     {
-
+        //TODO: revert operations
     }
 
     /**
@@ -308,4 +324,19 @@ abstract class DataRepository extends DefaultRepository
      * @throws FetchDataException
      */
     abstract protected function executeFetchOperations(array $queryData): Collection;
+
+    /**
+     * Function used to add the order by clause to query
+     * @param Builder $query
+     * @param array $orderByClause
+     * @return Builder
+     */
+    protected function addOrderByClauseToQuery(Builder $query, array $orderByClause): Builder
+    {
+        foreach ($orderByClause as $orderBy) {
+            $query->orderBy($orderBy[0], $orderBy[1] ?? "ASC");
+        }
+
+        return $query;
+    }
 }

@@ -25,7 +25,7 @@ return [
     /**
      * Flag used to detect whether parallel processing for certain features is enabled such as data fetching
      */
-    'gearman_parallel_processing' => false,
+    'gearman_parallel_processing' => true,
 
 
     /**

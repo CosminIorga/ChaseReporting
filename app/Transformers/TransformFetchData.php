@@ -58,20 +58,6 @@ class TransformFetchData
     protected $temporaryTableName;
 
     /**
-     * Small function used to initialize fields
-     * @param array $fetchData
-     * @param array $tablesAndIntervals
-     */
-    protected function init(array $fetchData, array $tablesAndIntervals)
-    {
-        $this->fetchData = $fetchData;
-        $this->configGetter = ConfigGetter::Instance();
-        $this->tablesAndIntervals = $tablesAndIntervals;
-        $this->fetchFromMultipleTables = count($this->tablesAndIntervals) > 1;
-        $this->temporaryTableName = null;
-    }
-
-    /**
      * Transform fetch data using the tablesAndColumns array to create an array of arrays
      * with necessary information to perform a single query from each sub-array
      * @param array $fetchData
@@ -100,6 +86,19 @@ class TransformFetchData
         return $this->operations;
     }
 
+    /**
+     * Small function used to initialize fields
+     * @param array $fetchData
+     * @param array $tablesAndIntervals
+     */
+    protected function init(array $fetchData, array $tablesAndIntervals)
+    {
+        $this->fetchData = $fetchData;
+        $this->configGetter = ConfigGetter::Instance();
+        $this->tablesAndIntervals = $tablesAndIntervals;
+        $this->fetchFromMultipleTables = count($this->tablesAndIntervals) > 1;
+        $this->temporaryTableName = null;
+    }
 
     /**
      * Function used to compute the temporary table name and column definitions
@@ -141,6 +140,19 @@ class TransformFetchData
     }
 
     /**
+     * Short function used to compute and return the temporary table name
+     * @return string
+     */
+    protected function computeTemporaryTableName(): string
+    {
+        if (is_null($this->temporaryTableName)) {
+            $this->temporaryTableName = uniqid(Data::TEMPORARY_TABLE_NAME_TEMPLATE);
+        }
+
+        return $this->temporaryTableName;
+    }
+
+    /**
      * Function used to compute the information needed to fetch data from the temporary table
      * @return array
      */
@@ -155,96 +167,8 @@ class TransformFetchData
                 true
             ),
             Data::FETCH_DATA_GROUP_CLAUSE => $this->computeQueryGroupClause(),
+            Data::FETCH_DATA_ORDER_CLAUSE => $this->computeQueryOrderClause(Data::FETCH_DATA_MODE_SELECT),
         ];
-    }
-
-    /**
-     * Function used to compute the information needed to drop the temporary table after the operations ended
-     * @return array
-     */
-    protected function computeDropTemporaryTableOperation(): array
-    {
-        return [
-            Data::FETCH_DATA_TABLE => $this->computeTemporaryTableName(),
-        ];
-    }
-
-    /**
-     * Function used to compute the operations needed to retrieve data from Reporting tables
-     * @return array
-     */
-    protected function computeFetchDataFromReportingTableOperations(): array
-    {
-        $fetchOperations = [];
-
-        /* Add flag to determine if data should be inserted in a temporary table or retrieved */
-        $fetchDataMode = $this->fetchFromMultipleTables ? Data::FETCH_DATA_MODE_INSERT : Data::FETCH_DATA_MODE_SELECT;
-
-        foreach ($this->tablesAndIntervals as $table => $intervals) {
-            $fetchOperation = [
-                Data::FETCH_DATA_TABLE => $table,
-                Data::FETCH_DATA_COLUMNS => $this->computeColumns(
-                    $this->fetchData[Data::COLUMNS],
-                    $intervals,
-                    $this->fetchFromMultipleTables
-                ),
-                Data::FETCH_DATA_WHERE_CLAUSE => $this->computeQueryWhereClause(),
-                Data::FETCH_DATA_GROUP_CLAUSE => $this->computeQueryGroupClause(),
-            ];
-
-            $fetchOperations[] = $fetchOperation;
-        }
-
-        return [
-            Data::FETCH_DATA_MODE => $fetchDataMode,
-            Data::FETCH_DATA => $fetchOperations,
-        ];
-    }
-
-
-    /**
-     * Short function used to compute and return the temporary table name
-     * @return string
-     */
-    protected function computeTemporaryTableName(): string
-    {
-        if (is_null($this->temporaryTableName)) {
-            $this->temporaryTableName = uniqid(Data::TEMPORARY_TABLE_NAME_TEMPLATE);
-        }
-
-        return $this->temporaryTableName;
-    }
-
-    /**
-     * Function used to compute the query where clause
-     * @return array
-     */
-    protected function computeQueryWhereClause(): array
-    {
-        return $this->fetchData[Data::WHERE_CLAUSE];
-    }
-
-    /**
-     * Function used to compute the query groupBy clause
-     * @return array
-     */
-    protected function computeQueryGroupClause(): array
-    {
-        return $this->fetchData[Data::GROUP_CLAUSE];
-    }
-
-    /**
-     * Function used to alter the columns array in order to simulate data fetching from a second temporary table
-     * @param array $columns
-     * @return array
-     */
-    protected function computeFetchTemporaryColumns(array $columns): array
-    {
-        return array_map(function ($column) {
-            $column[Data::COLUMN_NAME] = $column[Data::COLUMN_ALIAS];
-
-            return $column;
-        }, $columns);
     }
 
     /**
@@ -309,5 +233,95 @@ class TransformFetchData
                 implode(', ', $computedColumns)
             ),
         ];
+    }
+
+    /**
+     * Function used to alter the columns array in order to simulate data fetching from a second temporary table
+     * @param array $columns
+     * @return array
+     */
+    protected function computeFetchTemporaryColumns(array $columns): array
+    {
+        return array_map(function ($column) {
+            $column[Data::COLUMN_NAME] = $column[Data::COLUMN_ALIAS];
+
+            return $column;
+        }, $columns);
+    }
+
+    /**
+     * Function used to compute the query groupBy clause
+     * @return array
+     */
+    protected function computeQueryGroupClause(): array
+    {
+        return $this->fetchData[Data::GROUP_CLAUSE];
+    }
+
+    /**
+     * Function used to compute the information needed to drop the temporary table after the operations ended
+     * @return array
+     */
+    protected function computeDropTemporaryTableOperation(): array
+    {
+        return [
+            Data::FETCH_DATA_TABLE => $this->computeTemporaryTableName(),
+        ];
+    }
+
+    /**
+     * Function used to compute the operations needed to retrieve data from Reporting tables
+     * @return array
+     */
+    protected function computeFetchDataFromReportingTableOperations(): array
+    {
+        $fetchOperations = [];
+
+        /* Add flag to determine if data should be inserted in a temporary table or retrieved */
+        $fetchDataMode = $this->fetchFromMultipleTables ? Data::FETCH_DATA_MODE_INSERT : Data::FETCH_DATA_MODE_SELECT;
+
+        foreach ($this->tablesAndIntervals as $table => $intervals) {
+            $fetchOperation = [
+                Data::FETCH_DATA_TABLE => $table,
+                Data::FETCH_DATA_COLUMNS => $this->computeColumns(
+                    $this->fetchData[Data::COLUMNS],
+                    $intervals,
+                    $this->fetchFromMultipleTables
+                ),
+                Data::FETCH_DATA_WHERE_CLAUSE => $this->computeQueryWhereClause(),
+                Data::FETCH_DATA_GROUP_CLAUSE => $this->computeQueryGroupClause(),
+                Data::FETCH_DATA_ORDER_CLAUSE => $this->computeQueryOrderClause($fetchDataMode),
+            ];
+
+            $fetchOperations[] = $fetchOperation;
+        }
+
+        return [
+            Data::FETCH_DATA_MODE => $fetchDataMode,
+            Data::FETCH_DATA => $fetchOperations,
+        ];
+    }
+
+    /**
+     * Function used to compute the query where clause
+     * @return array
+     */
+    protected function computeQueryWhereClause(): array
+    {
+        return $this->fetchData[Data::WHERE_CLAUSE];
+    }
+
+    /**
+     * Function used to compute the query order by clause
+     * @param string $fetchDataMode
+     * @return array
+     */
+    protected function computeQueryOrderClause(string $fetchDataMode): array
+    {
+        if ($fetchDataMode == Data::FETCH_DATA_MODE_INSERT) {
+            return [];
+        }
+
+        return $this->fetchData[Data::ORDER_CLAUSE];
     }
 }

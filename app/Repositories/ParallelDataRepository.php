@@ -29,6 +29,8 @@ class ParallelDataRepository extends DataRepository
      */
     public function __construct()
     {
+        parent::__construct();
+
         $this->init();
     }
 
@@ -51,17 +53,21 @@ class ParallelDataRepository extends DataRepository
      */
     public function executeFetchOperations(array $queryData): Collection
     {
+        $this->debug(self::class);
+
         /* Fetch_Mode is always set to INSERT for parallel fetching */
         $fetchData = $queryData[Data::OPERATION_FETCH_REPORTING_DATA][Data::FETCH_DATA];
 
         /* Check if fetchData contains only one table. Call serialRepository if so */
         if (count($fetchData) == 1) {
-            /* Set flag in order to know to return the fetch results */
+            $this->debug("Required data is in one table. Redirecting to serial repository");
+
             $this->shouldReturnFetchResults = true;
 
-            return (new SerialDataRepository())->fetchData($queryData);
+            return (new SerialDataRepository())->executeFetchOperations($queryData);
         }
 
+        $this->debug("Preparing to send data to gearman");
         /* Otherwise prepare data for parallel fetching */
         foreach ($fetchData as $queryDataRecord) {
             $payload = [
@@ -73,8 +79,11 @@ class ParallelDataRepository extends DataRepository
                 Gearman::FETCH_TASK,
                 GearmanServiceHelper::encodeWorkload($payload)
             );
+
+            $this->debug("Added task [" . Gearman::FETCH_TASK . "] with payload: " . print_r($payload, true));
         }
 
+        $this->debug("Executing tasks ... ");
         $this->gearmanService->runTasks();
 
         $response = $this->gearmanService->retrieveResponse();
@@ -85,6 +94,8 @@ class ParallelDataRepository extends DataRepository
                 throw new FetchDataException(FetchDataException::NODE_FAILED_TO_INSERT_DATA_IN_TEMP_TABLE);
             }
         }
+
+        $this->debug("Parallel tasks executed successfully");
 
         /* Otherwise return empty collection as data will be fetched from temporary table */
 
